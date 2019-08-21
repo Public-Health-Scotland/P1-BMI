@@ -1,0 +1,29 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Common text files that may contain data #
+*.[cC][sS][vV]
+*.[tT][xX][tT]
+
+# Excel files #
+*.xls
+*.xlsx
+*.[xX][lL][sS][xXmMtT]?
+
+# SPSS formats #
+*.[sS][aA][vV]
+
+# R data files #
+*.[rR][dD][aA][tT][aA]
+*.[rR][dD][sS]
+
+# Data, Temp and Output folders #
+Data/
+Temp/
+Output/
+
+# Output documents #
+ISD-NATIONAL-STATS-REPORT.docx
+ISD-NATIONAL-STATS-SUMMARY.docx
