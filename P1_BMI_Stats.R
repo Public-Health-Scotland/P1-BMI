@@ -34,8 +34,15 @@ library(tidyr)
 
 ## File Locations
 # Source Data
-# hostFolder <- file.path("/PHI_conf", "ChildHealthSurveillance", "Portfolio", "Data")
-hostFolder <- file.path("Y:", "Portfolio", "Data")
+server_desktop <- "server"
+
+if (server_desktop == "server") {
+  hostFolder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data"
+  lookupFolder <- "/conf/linkage/output/lookups"
+} else if (server_desktop == "desktop") {
+  hostFolder <- "//stats/ChildHealthSurveillance/Portfolio/Data"
+  lookupFolder <-"//Isdsf00d03/cl-out/lookups"
+}
 
 ## Variables
 # Current School/Financial Year (e.g. 1819)
@@ -91,37 +98,34 @@ bmiData <- bmiData %>%
 
 ## Postcode match for 2001/02 to 2009/10
 # Import postcode reference file
-#pcRef <- read_spss(file.path(hostFolder, "ReferenceFiles", "postcode_at_review_2000_2010_school.zsav"))
 pcRef <- readRDS(file.path(hostFolder, "ReferenceFiles", "postcode_at_review_2000_2010_school.rds"))
 
 # Merge bmiData with the postcode reference file
-bmiData <- merge(bmiData, pcRef[,c("chi", "postcode", "schlyr_exam")], 
+bmiData <- merge(bmiData, pcRef[,c("chi", "postcode", "schlyr_exam")],
                  by = c("chi", "schlyr_exam"), all.x = TRUE, all.y = FALSE)
 
 # Create one postcode variable using pc_review & the postcode reference
 bmiData$pc_review <- if_else(bmiData$pc_review == "", bmiData$postcode, bmiData$pc_review)
 
-# Remove postcode reference file pcRef
-rm(pcRef)
-gc()
 
 # Remove redundant postcode variable
 bmiData <- subset(bmiData, select = -c(postcode))
 
+# Remove postcode reference file pcRef
+rm(pcRef)
+gc()
+
+
 ## Postcode match for 2010/11 on (chiQ)
 # Create variable to show number of quarters from Jan 1990 (J-M = 1)
-bmiData$examQN <- floor((difftime(as.Date(bmiData$daterec, '%Y%m%d'), as.Date("19900101", '%Y%m%d'), units = "days")/365)*4+1)
+bmiData$examQN <- floor((difftime(as.Date(bmiData$daterec, '%Y%m%d'), as.Date("19900101", '%Y%m%d'),
+                                  units = "days")/365)*4+1)
 
 # New variable to concatenate chi and examQN
 bmiData$chiQ <- paste(bmiData$chi, bmiData$examQN, sep = "")
 
 # Import reference file
-# pcQRef <- read_spss(file.path(pcQHostFolder, "chiQ.zsav"))
-
-####### next line does not run, could be related to reading in a z.sav file
-pcQRef <- read_spss(file.path(hostFolder, "Cohorts", "chiQ.zsav"))
-
-pcQRef <- readRDS(file.path(hostFolder, "Cohorts", "chiQ.rds"))
+pcQRef <- haven::read_spss(file.path(hostFolder, "Cohorts", "chiQ.zsav"))
 
 # Merge bmiData with postcode reference file
 bmiData <- merge(bmiData, pcQRef[,c("chiQ", "pcodeCHI")], by = c("chiQ"), all.x = TRUE, all.y = FALSE)
@@ -138,10 +142,10 @@ bmiData <- subset(bmiData, select = -c(chiQ, examQN, pcodeCHI))
 
 ## Add CA, HSCP, etc. from lookup
 # Import Reference File
-pcd <- read_spss(file.path("/conf", "linkage", "output", "lookups", "Unicode", "Geography", "Scottish Postcode Directory", 
-                           "Scottish_Postcode_Directory_2019_1.5.sav"))
+pcd <- read_rds(file.path(lookupFolder, "Unicode/Geography/Scottish Postcode Directory", 
+                                     "Scottish_Postcode_Directory_2019_1.5.rds"))
 
-## Merge data 
+## Merge data
 bmiData <- merge(bmiData, pcd, by = c("pc7"), all.x = TRUE, all.y = FALSE)
 
 # Remove reference file
@@ -175,7 +179,7 @@ bmiData <- bmiData %>%
 
 # Exclude Kircaldy schools during 2008/09
 kircaldy <- c('F735L','F736L','F737L','F738L','F739L','F740L','F741L',
-              'F743L','F744L','F745L','F746L','F747L','F749L','F882L','F884L') 
+              'F743L','F744L','F745L','F746L','F747L','F749L','F882L','F884L')
 bmiData <- bmiData %>%
   subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))
 
@@ -186,12 +190,6 @@ gc()
 # Exclude schlyr 02/03 from Borders data
 bmiData <- bmiData %>%
   subset(!(HB2018 == 'B' & schlyr_exam == '0203'))
-
-
-
-
-
-
 
 ## Select relevant years function
 hbYearFilter <- function(x = bmiData, HB, ey, cy = currentYr) {
@@ -205,21 +203,20 @@ bmiDataT <- bmiData %>%
   filter(!(bmiData$HB2018 == 'T' & as.numeric(schlyr_exam) < 203))
 
 
-
 hbYearFilter(HB = 'T', ey = 203)
 
 ## added by MN
 # SQ commented that in order to run the code below I would need to
 # write a separate function defining HB as a vector
-hbYearFilter(HB = 'F','L','S', ey = 102)
-hbYearFilter(HB = 'W', ey = 304)
-hbYearFilter(HB = 'Y', ey = 405)
-hbYearFilter(HB = 'V', ey = 506)
-hbYearFilter(HB = 'G', ey = 607)
-hbYearFilter(HB = 'A', ey = 708)
-hbYearFilter(HB = 'H', 'Z', ey = 809)
-hbYearFilter(HB = 'N', ey = 910)
-hbYearFilter(HB = 'R', ey = 1011)
+# hbYearFilter(HB = 'F','L','S', ey = 102)
+# hbYearFilter(HB = 'W', ey = 304)
+# hbYearFilter(HB = 'Y', ey = 405)
+# hbYearFilter(HB = 'V', ey = 506)
+# hbYearFilter(HB = 'G', ey = 607)
+# hbYearFilter(HB = 'A', ey = 708)
+# hbYearFilter(HB = 'H', 'Z', ey = 809)
+# hbYearFilter(HB = 'N', ey = 910)
+# hbYearFilter(HB = 'R', ey = 1011)
 
 
 # code below should work
@@ -237,75 +234,66 @@ hbYearFilter(HB = 'N', ey = 910)
 hbYearFilter(HB = 'R', ey = 1011)
 
 
-
 ### 5 - Child Data Sort/Analysis ----
 
 # Create sex variable based on 9th digit of CHI
 
 bmiData <- mutate(bmiData, sex = case_when(
-  substr(chi,9,9) %IN% ('0','2','4','6','8') ~ 'F',
-  substr(chi,9,9) %IN% ('1','3','5','7','9') ~ 'M'
+  substr(chi,9,9) %in% c("0","2","4","6","8") ~ "F",
+  substr(chi,9,9) %in% c("1","3","5","7","9") ~ "M"
 ))
 
 # create 2 digit year, month and day of birth variables
-bmiData <- mutate(bmiData, yob = substr(chi,5,2))
-bmiData <- mutate(bmiData, mob = substr(chi,3,2))
-bmiData <- mutate(bmiData, dob = substr(chi,1,2))
-
-# create a 4 digit year of birth variable
-if (bmiData$yob >= 80, nyob <- 1900 + bmiData$yob
-      else if (bmiData$yob < 80, nyob <- 2000 + bmiData$yob))
-    
-bmiData&nyob <- if_else(bmiData$yob >= 80, 1900 + bmiData$yob, 2000 + bmiData$yob)
-
-
+bmiData <- bmiData %>%
+  mutate(yob = as.integer(substr(chi,5,6)),
+         mob = as.integer(substr(chi,3,4)),
+         dob = as.integer(substr(chi,1,2)),
+        # create a 4 digit year of birth variable
+        nyob = (if (yob >= 80) 1900 + yob else 2000 + yob),
+        datedob = ymd(paste(yob,mob,dob)),
+        daterev = ymd(date_hw),
+        # Create agemth variable to show child's age in months
+        agemth = lubridate::interval(datedob,daterev) %/% months(1))
 
 # Apply the dictionary from the Dictionary school file
 
-
-# Create agemth variable to show child's age in months 
 # at the date of review/height-weight recording
 
 
 
 
 # Select children aged 4 years to under 8 years.
-bmiData <- subset(bmiData, agemth >=48 | agemth <96)
+bmiData <- subset(bmiData, agemth >=48 | agemth <96) #604,209 obs
 
 
-## Save out a file at this point that can be used to produce the total 
+## Save out a file at this point that can be used to produce the total
 ## number of reviews for HB and CA for the coverage calculations.
 ## This file contains all reviews (with and without valid height and weight)
 ## save as data frame?
-save file
+saveRDS(hostFolder, "allReviews.rds")
 
 
 
 # Convert the height and weight variables from string to numeric
 bmiData <- mutate(bmiData, height = as.numeric(height),
                   weight = as.numeric(weight))
-bmiData <- mutate(bmiData, )
-
 
 # Select only records with a valid (i.e. non-zero) height and weight
 bmiData <- subset(bmiData, height != 0)
-bmiData <- subset(bmiData, weight != 0)
+bmiData <- subset(bmiData, weight != 0) #603,685 obs
 
 
 # Create variable to show height in metres
-bmiData <- mutate(bmiData, height_m = height/100)
+#height in mm???
+bmiData <- mutate(bmiData, height_m = height/1000)
 
 
 # Calculate BMI
 bmiData <- mutate(bmiData, bmi = weight/(height_m*height_m))
 
-
-# Convert ageyr variable to a numeric
-bmiData <- mutate(bmiData, ageyr = as.numeric(ageyr))
-
-
 # Child's age in months will lie between two ages in whole months in the lookup table.
 # Line below calculates the next lowest whole month and converts to years
+bmiData <- mutate(bmiData, ageyr = round(1000*trunc(agemth)/12)/1000)
 
 
 
