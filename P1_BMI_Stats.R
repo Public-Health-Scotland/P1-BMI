@@ -285,14 +285,15 @@ bmiData <- subset(bmiData, weight != 0) #603,685 obs
 
 # Create variable to show height in metres
 #height in mm???
-bmiData <- mutate(bmiData, height_m = height/1000)
+bmiData <- mutate(bmiData, height_m = height/100)
 
 
 # Calculate BMI
 bmiData <- mutate(bmiData, bmi = weight/(height_m*height_m))
 
-# Child's age in months will lie between two ages in whole months in the lookup table.
-# Line below calculates the next lowest whole month and converts to years
+# Child's age in months will lie between two ages in 
+# in the lookup table. Line below calculates the next 
+# lowest whole month and converts to years.
 bmiData <- mutate(bmiData, ageyr = round(1000*trunc(agemth)/12)/1000)
 
 
@@ -302,16 +303,113 @@ bmiData <- mutate(bmiData, ageyr = round(1000*trunc(agemth)/12)/1000)
 # The corresponding L,M,S are the lowest (LO) values used in the interpolation.
 bmiData <- arrange(bmiData, ageyr)
 
-grd <- readRDS(file.path(hostFolder, "ReferenceFiles", "UK1990_BMI_Growth_Reference_Data.rds"))
+grd <- readRDS(file.path(hostFolder, "ReferenceFiles",
+                         "UK1990_BMI_Growth_Reference_Data.rds"))
 
 # Merge data
-bmiData <- merge(bmiData, grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE)
+bmiData <- merge(bmiData, grd, by = c("ageyr"), 
+                 all.x = TRUE, all.y = TRUE)
+
+# Rename the Growth Reference variables for the lowest whole month
+# converted to years (LO)
+dplyr::rename(bmi_male_l=LMLO_b, bmi_male_m=MMLO_b, bmi_male_s=SMLO_b, 
+              bmi_female_l=LFLO_b,bmi_female_m=MFLO_b, bmi_female_s=SFLO_b,
+              height_male_l=LMLO_h, height_male_m=MMLO_h, height_male_s=SMLO_h,
+              height_female_l=LFLO_h, height_female_m=MFLO_h, 
+              height_female_s=SFLO_h, weight_male_l=LMLO_w, 
+              weight_male_m=MMLO_w, weight_male_s=SMLO_w, 
+              weight_female_l=LFLO_w, weight_female_m=MFLO_w, 
+              weight_female_s=SFLO_w, ageyr_agelo)
+
+
+# Child's age in months will lie between two ages in 
+# in the lookup table. Line below calculates the next 
+# highest whole month and converts to years.
+bmiData <- mutate(bmiData, ageyr = round(1000*trunc(agemth)+1/12)/1000)
+
+# Merge data
+bmiData <- merge(bmiData, grd, by = c("ageyr"), 
+                 all.x = TRUE, all.y = TRUE)
+  
+# Rename the Growth Reference variables for the highest whole month
+# converted to years (HI)
+dplyr::rename(bmi_male_l=LMHI_b, bmi_male_m=MMHI_b, bmi_male_s=SMHI_b, 
+              bmi_female_l=LFHI_b,bmi_female_m=MFHI_b, bmi_female_s=SFHI_b,
+              height_male_l=LMHI_h, height_male_m=MMHI_h, height_male_s=SMHI_h,
+              height_female_l=LFHI_h, height_female_m=MFHI_h, 
+              height_female_s=SFHI_h, weight_male_l=LMHI_w, 
+              weight_male_m=MMHI_w, weight_male_s=SMHI_w, 
+              weight_female_l=LFHI_w, weight_female_m=MFHI_w, 
+              weight_female_s=SFHI_w, ageyr_agehi)
+
+# Calculate age in years to 2 decimal places for BMI, Height and Weight.
+bmiData <- bmiData %>%
+  mutate(ageyrs2decimal = round((agemth/12), 2))
+
+
+# Interpolation - BMI
+bmiData <- bmiData %>%
+  if_else(sex == M, mutate(
+    LINT_b=(LMHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LMHI_b-LMLO_b)),
+    MINT_b=(MMHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MMHI_b-MMLO_b)),
+    SINT_b=(SMHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SMHI_b-SMLO_b))),
+    mutate(
+      LINT_b=(LFHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LFHI_b-LFLO_b)),
+      MINT_b=(MFHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MFHI_b-MFLO_b)),
+      SINT_b=(SFHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SFHI_b-SFLO_b))))
+
+
+# Interpolation - Height
+bmiData <- bmiData %>%
+  if_else(sex == M, mutate(
+    LINT_h=(LMHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LMHI_h-LMLO_h)),
+    MINT_h=(MMHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MMHI_h-MMLO_h)),
+    SINT_h=(SMHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SMHI_h-SMLO_h))),
+    mutate(
+      LINT_h=(LFHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LFHI_h-LFLO_h)),
+      MINT_h=(MFHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MFHI_h-MFLO_h)),
+      SINT_h=(SFHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SFHI_h-SFLO_h))))
+
+
+# Interpolation - Weight
+bmiData <- bmiData %>%
+  if_else(sex == M, mutate(
+    LINT_w=(LMHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LMHI_w-LMLO_w)),
+    MINT_w=(MMHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MMHI_w-MMLO_w)),
+    SINT_w=(SMHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SMHI_w-SMLO_w))),
+    mutate(
+      LINT_w=(LFHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LFHI_w-LFLO_w)),
+      MINT_w=(MFHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MFHI_w-MFLO_w)),
+      SINT_w=(SFHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SFHI_w-SFLO_w))))
+
+
+#SQ section - standard deviation scores
 
 
 
+# Create epidemiological and clinical thresholds
+# epidemiological
+bmiData <- bmiData %<%
+  case_when(
+            (cent_b <= 2) ~ cent_grp1 = 1,
+            ((cent_b > 2) & (cent_b < 85)) ~ cent_grp2 = 1,
+            ((cent_b >= 85) & (cent_b < 95)) ~ cent_grp3 = 1,
+            (cent_b >= 95) ~ cent_grp4 = 1,
+            (cent_b >= 85) ~ cent_grp5 = 1
+            )
 
 
-
+# clinical
+bmiData <- bmiData %<%
+  case_when(
+            (SDS_b <= -2.67) ~ clin_cent_grp1 = 1,
+            ((SDS_b > -2.67) & (SDS_b < 1.33)) ~ clin_cent_grp2 = 1,
+            ((SDS_b >=1.33) & (SDS_b < 2)) ~ clin_cent_grp3 = 1,
+            ((SDS_b >= 2) & (SDS_b < 2.67)) ~ clin_cent_grp4 = 1,
+            (SDS_b >= 2.67) ~ clin_cent_grp5 = 1,
+            (SDS_b >= 1.33) ~ clin_cent_grp6 = 1,
+            (SDS_b >= 2) ~ clin_cent_grp7 = 1
+            )
 
 
 
