@@ -74,6 +74,33 @@ apply_hbres_num <- function(hbres_name) {
                                hbres_name == "NHS Western Isles" ~ 14,         
                                TRUE ~ 99))}
 
+## Select relevant years function
+apply_hb_year <- function(x = bmiData, HB, ey, cy = currentYr) {
+  x <- x %>%
+    subset(!(x$HB2018 == HB &
+               as.numeric(schlyr_exam) <= ey &
+               as.numeric(schlyr_exam) >= cy))
+}
+
+## Recode HB variable to single cypher function
+apply_hb_cypher <- function(HB2018) {
+  mutate(hb2018_cypher = case_when(HB2018 == "S08000015" ~ "A",
+                            HB2018 == "S08000016" ~ "B",
+                            HB2018 == "S08000017" ~ "Y",
+                            HB2018 == "S08000019" ~ "V",
+                            HB2018 == "S08000020" ~ "N",
+                            HB2018 == "S08000021" ~ "G",
+                            HB2018 == "S08000022" ~ "H",
+                            HB2018 == "S08000023" ~ "L",
+                            HB2018 == "S08000024" ~ "S",
+                            HB2018 == "S08000025" ~ "R",
+                            HB2018 == "S08000026" ~ "Z",
+                            HB2018 == "S08000028" ~ "W",
+                            HB2018 == "S08000029" ~ "F",
+                            HB2018 == "S08000030" ~ "T"))
+}
+
+
 
 # Lower confidence limits.
 bmiData <- mutate(# Lower confidence limits.

@@ -192,18 +192,13 @@ bmiData <- bmiData %>%
   subset(!(HB2018 == 'B' & schlyr_exam == '0203'))
 
 ## Select relevant years function
-hbYearFilter <- function(x = bmiData, HB, ey, cy = currentYr) {
+apply_hb_year <- function(x = bmiData, HB, ey, cy = currentYr) {
   x <- x %>%
     subset(!(x$HB2018 == HB &
                as.numeric(schlyr_exam) <= ey &
                as.numeric(schlyr_exam) >= cy))
 }
 
-bmiDataT <- bmiData %>%
-  filter(!(bmiData$HB2018 == 'T' & as.numeric(schlyr_exam) < 203))
-
-
-hbYearFilter(HB = 'T', ey = 203)
 
 ## added by MN
 # SQ commented that in order to run the code below I would need to
@@ -220,18 +215,19 @@ hbYearFilter(HB = 'T', ey = 203)
 
 
 # code below should work
-hbYearFilter(HB = 'F', ey = 102)
-hbYearFilter(HB = 'L', ey = 102)
-hbYearFilter(HB = 'S', ey = 102)
-hbYearFilter(HB = 'W', ey = 304)
-hbYearFilter(HB = 'Y', ey = 405)
-hbYearFilter(HB = 'V', ey = 506)
-hbYearFilter(HB = 'G', ey = 607)
-hbYearFilter(HB = 'A', ey = 708)
-hbYearFilter(HB = 'H', ey = 809)
-hbYearFilter(HB = 'Z', ey = 809)
-hbYearFilter(HB = 'N', ey = 910)
-hbYearFilter(HB = 'R', ey = 1011)
+apply_hb_year(HB = 'F', ey = 102)
+apply_hb_year(HB = 'L', ey = 102)
+apply_hb_year(HB = 'S', ey = 102)
+apply_hb_year(HB = 'T', ey = 203)
+apply_hb_year(HB = 'W', ey = 304)
+apply_hb_year(HB = 'Y', ey = 405)
+apply_hb_year(HB = 'V', ey = 506)
+apply_hb_year(HB = 'G', ey = 607)
+apply_hb_year(HB = 'A', ey = 708)
+apply_hb_year(HB = 'H', ey = 809)
+apply_hb_year(HB = 'Z', ey = 809)
+apply_hb_year(HB = 'N', ey = 910)
+apply_hb_year(HB = 'R', ey = 1011)
 
 
 ### 5 - Child Data Sort/Analysis ----
