@@ -448,26 +448,78 @@ bmiData <- bmiData %>%
   mutate(bmiData, tot = 1)
 arrange(pc7)
 
-saveRDS(hostFolder, "BMI_data_0102_1718.rds")
+#saveRDS(hostFolder, "BMI_data_0102_1718.rds")
 
 # read in deprivation lookup. 
-simd2016 <- readRDS(paste0(lookupFolder, "/Unicode/Deprivation/postcode_2019_1.5_simd2016.rds"))
-simd2016 <- subset(simd2016, select = c(pc7, DataZone2011, simd2016_sc_quintile))
-
-simd2012 <- read_spss(paste0(lookupFolder, "/Unicode/Deprivation/postcode_2016_1_simd2012.sav"))
+simd2016 <- readRDS(paste0(lookupFolder,
+                           "/Unicode/Deprivation/postcode_2019_2_simd2016.rds"))
+simd2016 <- subset(simd2016, select = c(pc7, simd2016_sc_quintile))
+simd2012 <- read_spss(paste0(lookupFolder,
+                             "/Unicode/Deprivation/postcode_2016_1_simd2012.sav"))
 simd2012 <- subset(simd2012, select = c(pc7, simd2012_sc_quintile))
-
-simd2009 <- read_spss(paste0(lookupFolder, "/Unicode/Deprivation/postcode_2012_2_simd2009v2.sav"))
+simd2009 <- read_spss(paste0(lookupFolder,
+                             "/Unicode/Deprivation/postcode_2012_2_simd2009v2.sav"))
 simd2009 <- subset(simd2009, select = c(pc7, simd2009v2_sc_quintile))
 dplyr::rename(simd2009, pc7 = PC7)
-
-simd2006 <- read_spss(paste0(lookupFolder, "/Unicode/Deprivation/postcode_2009_2_simd2006.sav"))
+simd2006 <- read_spss(paste0(lookupFolder, 
+                             "/Unicode/Deprivation/postcode_2009_2_simd2006.sav"))
 simd2006 <- subset(simd2006, select = c(pc7, simd2006_sc_quintile))
 dplyr::rename(simd2006, pc7 = PC7)
-
-simd2004 <- read_spss(paste0(lookupFolder, "/Unicode/Deprivation/postcode_2006_2_simd2004.sav"))
+simd2004 <- read_spss(paste0(lookupFolder, 
+                             "/Unicode/Deprivation/postcode_2006_2_simd2004.sav"))
 simd2004 <- subset(simd2004, select = c(pc7, simd2004_sc_quintile))
 dplyr::rename(simd2004, pc7 = PC7)
+
+
+#Is this more efficient?
+# simd2016 <- readRDS(paste0(lookupFolder, 
+#                            "/Unicode/Deprivation/postcode_2019_2_simd2016.rds")) %>%
+#   select(pc7, simd2016_sc_quintile) %>%
+#   rename(postcode = pc7,
+#          simd = simd2016_sc_quintile) %>%
+#   mutate(year = "simd_2016")
+# 
+# simd_2012 <- read_spss(paste0(lookupFolder, 
+#                               "/Unicode/Deprivation/postcode_2016_1_simd2012.sav")) %>%
+#   select(pc7, simd2012_sc_quintile) %>%
+#   rename(postcode = pc7,
+#          simd = simd2012_sc_quintile) %>%
+#   mutate(year = "simd_2012")
+# 
+# simd_2009 <- read_spss(paste0(lookupFolder,
+#                               "/Unicode/Deprivation/",
+#                               "postcode_2012_2_simd2009v2.sav")) %>%
+#   select(PC7, simd2009v2_sc_quintile) %>%
+#   rename(postcode = PC7,
+#          simd = simd2009v2_sc_quintile) %>%
+#   mutate(year = "simd_2009")
+# 
+# simd_2006 <- read_spss(paste0(lookupFolder,
+#                               "/Unicode/Deprivation/",
+#                               "postcode_2009_2_simd2006.sav")) %>%
+#   select(PC7, simd2006_sc_quintile) %>%
+#   rename(postcode = PC7,
+#          simd = simd2006_sc_quintile) %>%
+#   mutate(year = "simd_2006")
+# 
+# simd_2004 <- read_spss(paste0(lookupFolder,
+#                               "/Unicode/Deprivation/",
+#                               "postcode_2006_2_simd2004.sav")) %>%
+#   select(PC7, simd2004_sc_quintile) %>%
+#   rename(postcode = PC7,
+#          simd = simd2004_sc_quintile) %>%
+#   mutate(year = "simd_2004")
+
+# Assign the appropriate SIMD value to a patient depending on the year they
+# were admitted
+# data <- data %>%
+#   mutate(simd = case_when(
+#     year >= 2014 ~ simd2016_sc_quintile,
+#     year >= 2010 & year <= 2013 ~ simd2012_sc_quintile,
+#     year >= 2007 & year <= 2009 ~ simd2009v2_sc_quintile,
+#     year >= 2004 & year <= 2006 ~ simd2006_sc_quintile,
+#     year <= 2003 ~ simd2004_sc_quintile
+#   )) 
 
 simdMerge <- function(x, y){
   df <- merge(x, y, by= "pc7", all.x= TRUE, all.y= TRUE)
@@ -478,7 +530,6 @@ simd <- Reduce(simdMerge, list(simd2016, simd2012, simd2009, simd2006, simd2004)
 rescale <- function(x_i){
   5-x_i
 }
-
 bmiData <- bmiData %>%
   merge(bmiData, simd, by = pc7)
 #Recode simd so all go from 1=most to 5=least - this was required for creating allsimdyear/allsimdfinyear----------------*.
@@ -487,13 +538,6 @@ mutate(simd2004_sc_quintile <- sapply(simd2004_sc_quintile,rescale),
        simd2006_sc_quintile <- sapply(simd2006_sc_quintile,rescale),
        allsimdfinyear=0)
 
-a= c('0102', '0203', '0304', '0405', '0506', '0607','0708', '0809', '0910','1011', '1112', '1213', '1314',
-     '1415', '1516', '1617', '1718')
-b= c('simd2004_sc_quintile', 'simd2004_sc_quintile', 'simd2004_sc_quintile', 'simd2006_sc_quintile',
-     'simd2006_sc_quintile', 'simd2006_sc_quintile', 'simd2009v2_sc_quintile', 'simd2009v2_sc_quintile',
-     'simd2009v2_sc_quintile', 'simd2012_sc_quintile', 'simd2012_sc_quintile', 'simd2012_sc_quintile',
-     'simd2012_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile',
-     'simd2016_sc_quintile')
 
 #if(schlyr_exam ==a allsimdfinyear=b)
 bmiData < bmiData %>%
@@ -506,10 +550,73 @@ bmiData < bmiData %>%
                         'simd2012_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile',
                         'simd2016_sc_quintile',
                         'simd2016_sc_quintile')}
+# a= c('0102', '0203', '0304', '0405', '0506', '0607','0708', '0809', '0910','1011', '1112', '1213', '1314',
+#      '1415', '1516', '1617', '1718')
+# b= c('simd2004_sc_quintile', 'simd2004_sc_quintile', 'simd2004_sc_quintile', 'simd2006_sc_quintile',
+#      'simd2006_sc_quintile', 'simd2006_sc_quintile', 'simd2009v2_sc_quintile', 'simd2009v2_sc_quintile',
+#      'simd2009v2_sc_quintile', 'simd2012_sc_quintile', 'simd2012_sc_quintile', 'simd2012_sc_quintile',
+#      'simd2012_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile',
+#      'simd2016_sc_quintile')
+# bmiData < bmiData %>%
+#   for (schlyr_exam in a) {
+#     allsimdfinyear <- b}
+mutate(simd = allsimdfinyear),
+if is.na(allsimdfinyear) simd='U', #x of n records don't have a SIMD quintile.
+
+# Councils - create the old CA with codes 01-32 ; the new codes are made unique by the last 2 chars so use them   .
+bmiData < bmiData %>%
+  for (CA in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", "40", "13")) {
+       CA <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")}, 
+mutate(council_area_name <- sapply(council_area_name,rescale)), 
+# CA_name = case_when(CA == 1 ~ "Aberdeen City",
+#                     CA == 2 ~ "Aberdeenshire",
+#                     CA == 3 ~ "Angus", 
+#                     CA == 4 ~ "Argyll & Bute",
+#                     CA == 5 ~ "Scottish Borders", 
+#                     CA == 6 ~ "Clackmannanshire",
+#                     CA == 7 ~ "West Dunbartonshire", 
+#                     CA == 8 ~ "Dumfries & Galloway",
+#                     CA == 9 ~ "Dundee City", 
+#                     CA == 10 ~ "East Ayrshire",
+#                     CA == 11 ~ "East Dunbartonshire", 
+#                     CA == 12 ~ "East Lothian",
+#                     CA == 13 ~ "East Renfrewshire", 
+#                     CA == 14 ~ "City of Edinburgh",
+#                     CA == 15 ~ "Falkirk",
+#                     CA == 16 ~ "Fife",
+#                     CA == 17 ~ "Glasgow City", 
+#                     CA == 18 ~ "Highland",
+#                     CA == 19 ~ "Inverclyde",
+#                     CA == 20 ~ "Midlothian",
+#                     CA == 21 ~ "Moray",
+#                     CA == 22 ~ "North Ayrshire",
+#                     CA == 23 ~ "North Lanarkshire", 
+#                     CA == 24 ~ "Orkney Islands",
+#                     CA == 25 ~ "Perth & Kinross",
+#                     CA == 26 ~ "Renfrewshire",
+#                     CA == 27 ~ "Shetland Islands",
+#                     CA == 28 ~ "South Ayrshire",
+#                     CA == 29 ~ "South Lanarkshire",
+#                     CA == 30 ~ "Stirling",
+#                     CA == 31 ~ "West Lothian",
+#                     CA == 32 ~ "Comhairle nan Eilean Siar",
+#                     TRUE ~ "Other"),
+mutate carea=paste("CA",CA),
 
 
+arrange(bmiData, chi)
 
 
+bmiData <- bmiData %>%
+  subset(select = c(chi id HB2018 CA2018 CA carea sex1 height weight daterec schlyr_exam schlgivn rev_num agemth nyob mob dob PC7
+                    simd2016_sc_quintile simd2012_sc_quintile simd2009v2_sc_quintile simd2006_sc_quintile simd2004_sc_quintile simd sex h w hm BMI 
+                    cent_grp1 cent_grp2 cent_grp3 cent_grp4 cent_grp5 tot clin_cent_grp1 clin_cent_grp2 clin_cent_grp3 clin_cent_grp4 clin_cent_grp5 clin_cent_grp6 clin_cent_grp7
+                    AGELO LMLO_b MMLO_b SMLO_b LFLO_b MFLO_b SFLO_b AGEHI LMHI_b MMHI_b SMHI_b LFHI_b MFHI_b SFHI_b LINT_b MINT_b SINT_b SDS_b cent_b
+                    LMLO_h MMLO_h SMLO_h LFLO_h MFLO_h SFLO_h LMHI_h MMHI_h SMHI_h LFHI_h MFHI_h SFHI_h LINT_h MINT_h SINT_h SDS_h cent_h
+                    LMLO_w MMLO_w SMLO_w LFLO_w MFLO_w SFLO_w LMHI_w MMHI_w SMHI_w LFHI_w MFHI_w SFHI_w LINT_w MINT_w SINT_w SDS_w cent_w))
+# This file contains data for school years 2001/02 to 2017/18 and should be used for information requests etc.
+# so that any figures produced match those published in for financial year 2017/18.
+saveRDS(bmiData, (hostFolder, "BMI_data_0102_1718.rds"))
 
 
 
