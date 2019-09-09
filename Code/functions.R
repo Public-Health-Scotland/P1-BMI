@@ -1,6 +1,3 @@
-#added this line
-
-
 ### ---- Council Area Recode ----
 apply_ca_name <-function(council_area){
   mutate(council_area_name = case_when(council_area == 1 ~ "Aberdeen City",
@@ -131,3 +128,14 @@ bmiData <- mutate(# Lower confidence limits.
                   uci_clin_obeplus = (p_clin_obeplus + 1.96 * sqrt(((p_clin_obeplus * q_clin_obeplus)/tot) * (pcf))) * 100)
 
 
+calculate_ci <- function(df, weight_group = c("undw", "hw", "over", "obe", "overobe")){
+  mutate_if(weight_group == "undw")(n = cent_grp1, p = n/tot, q = (1-p))
+  mutate_if(weight_group == "hw")(n = cent_grp1, p = n/tot, q = (1-p))
+  mutate_if(weight_group == "over")(n = cent_grp1, p = n/tot, q = (1-p))
+  mutate_if(weight_group == "obe")(n = cent_grp1, p = n/tot, q = (1-p))
+  mutate_if(weight_group == "overobe")(n = cent_grp1, p = n/tot, q = (1-p))
+  #does this work???
+  mutate(assign(paste(weight_group, "_bmi",sep = "")) = n/tot)
+  mutate(assign(paste(weight_group, "_lci",sep = "")) = (p - 1.96 * sqrt(((p * q)/tot) * (pcf))))
+  mutate(assign(paste(weight_group, "_uci",sep = "")) = (p + 1.96 * sqrt(((p * q)/tot) * (pcf))))
+  }

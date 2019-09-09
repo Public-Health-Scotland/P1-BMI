@@ -300,18 +300,23 @@ bmiData <- mutate(bmiData, bmi = weight/(height_m*height_m))
 bmiData <- mutate(bmiData, ageyr = round(1000*trunc(agemth)/12)/1000)
 
 
-
-
 # The look-up file is matched in using the lowest whole month converted to years.
 # The corresponding L,M,S are the lowest (LO) values used in the interpolation.
 bmiData <- arrange(bmiData, ageyr)
+
+saveRDS(bmiData, paste0(hostFolder, "temp_all_reviews.rds"))
+bmiData <- read_rds(paste0(hostFolder, "temp_all_reviews.rds"))
 
 grd <- readRDS(file.path(hostFolder, "ReferenceFiles",
                          "UK1990_BMI_Growth_Reference_Data.rds"))
 
 # Merge data
 bmiData <- bmiData %>%
-  merge(bmiData, grd, by = "ageyr", all.x = TRUE, all.y = TRUE)
+  merge(bmiData, grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE)
+
+bmiData$ageyr=round(bmiData$ageyr,3)
+grd$ageyr=round(grd$ageyr,3)
+
 # Rename the Growth Reference variables for the lowest whole month
 # converted to years (LO)
   dplyr::rename(LMLO_b = bmi_male_l, MMLO_b = bmi_male_m, SMLO_b = bmi_male_s,
