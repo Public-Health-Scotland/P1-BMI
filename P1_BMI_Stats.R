@@ -430,7 +430,8 @@ bmi_data <- bmi_data %>%
          cent_w=100 * pnorm(SDS_w, mean = 0, sd = 1))
 
 # select out those outwith the range deemed to be real.
-bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) & (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))
+bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) & 
+                     (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))
 
 
 #Lines 490-506. TO BE FIXED.
@@ -482,8 +483,9 @@ simd_2004 <- readRDS(paste0(
   lookupFolder, "/Unicode/Deprivation/", "postcode_2006_2_simd2004.rds")) %>%
   select(pc7, simd2004_sc_quintile)
 
-#Recode simd 2004 & 2006 so all go from 1=most to 5=least - this was required for creating allsimdyear/allsimdfinyear----------------*.
-#Still to change labels
+# Recode simd 2004 & 2006 so all go from 1=most to 5=least - this was
+# required for creating allsimdyear/allsimdfinyear
+# Still to change labels
 rescale <- function(x_i){
   5-x_i
 }
@@ -500,20 +502,32 @@ allsimd <- all_simd %>%
 bmi_data <- bmi_data %>%
   merge(all_simd, by = "pc7") %>%
   bmi_data <- bmi_data %>% mutate(simd = case_when(
-    schlyr_exam %in% c("1415", "1516", "1617", "1718", "1819") ~ simd2016_sc_quintile,
-    schlyr_exam %in% c("1011", "1112", "1213", "1314") ~ simd2012_sc_quintile,
-    schlyr_exam %in% c("0708", "0809", "0910") ~ simd2009v2_sc_quintile,
-    schlyr_exam %in% c("0405", "0607", "1213") ~ simd2006_sc_quintile,
-    schlyr_exam %in% c("0102", "0203", "0304") ~ simd2004_sc_quintile
+    schlyr_exam %in% c("1415", "1516", "1617", "1718", "1819") 
+    ~ simd2016_sc_quintile,
+    schlyr_exam %in% c("1011", "1112", "1213", "1314") 
+    ~ simd2012_sc_quintile,
+    schlyr_exam %in% c("0708", "0809", "0910") 
+    ~ simd2009v2_sc_quintile,
+    schlyr_exam %in% c("0405", "0607", "1213") 
+    ~ simd2006_sc_quintile,
+    schlyr_exam %in% c("0102", "0203", "0304") 
+    ~ simd2004_sc_quintile
   ))
 mutate(simd = allsimdfinyear),
 if is.na(allsimdfinyear) simd='U', #x of n records don't have a SIMD quintile.
 
-# Councils - create the old CA with codes 01-32 ; the new codes are made unique by the last 2 chars so use them   .
+# Councils - create the old CA with codes 01-32 ; the new codes are 
+# made unique by the last 2 chars so use them   .
 bmi_data < bmi_data %>%
-  for (CA in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", "40", "13")) {
-       CA <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")}, 
-mutate(council_area_name <- sapply(council_area_name,rescale)), 
+  for (CA in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", 
+               "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", 
+               "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", 
+               "40", "13")) {
+       CA <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", 
+               "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
+               "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
+               "31", "32")}, 
+mutate(council_area_name <- sapply(council_area_name, rescale)), 
 # CA_name = case_when(CA == 1 ~ "Aberdeen City",
 #                     CA == 2 ~ "Aberdeenshire",
 #                     CA == 3 ~ "Angus", 
