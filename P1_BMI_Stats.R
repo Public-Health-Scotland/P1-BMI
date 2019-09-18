@@ -617,7 +617,7 @@ hb_data <- left_join(hb_data, hb_pop_estimates,
 
 
 
-### Council Area analysis
+### Council area analysis
 
 # create population file from the GRO mid year population estimates
 # of five year olds in each ca 
@@ -646,6 +646,32 @@ ca_data <- left_join(ca_data, ca_pop_estimates,
 
 
 
+
+
+### Gender analysis
+
+# create population file from the GRO mid year population estimates
+# of five year olds by gender.
+gender_pop_estimates <- 
+
+
+
+# create totals for individual hb and all participating boards 
+# by gender
+gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
+                   summarise_at(vars(tot:clin_cent_grp7), sum),
+                 # Scotland level (all participating boards)
+                 bmi_basefile %>% group_by(schlyr_exam) %>% 
+                   summarise_at(vars(tot:clin_cent_grp7), sum) %>%
+                   mutate(HB2018 = "Total")) %>% ungroup()
+
+# Match hb data to hb population estimates
+gender_data <- left_join(gender_data, hb_pop_estimates, 
+                     by = c(sex, schlyr_exam))
+
+
+# Confidence intervals (gender)
+# use the function to calculate confidence intervals
 
 
 
