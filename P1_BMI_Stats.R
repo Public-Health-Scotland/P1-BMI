@@ -344,8 +344,9 @@ left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
 bmi_data <- bmi_data %>%
   mutate(ageyrs2decimal = round((agemth/12), 2))
 
-#Change merge above to alternative join so following line no needed?
+# Change merge above to alternative join so following line no needed?
 bmi_data <- subset(bmi_data, !is.na(sex))
+
 # Interpolation - BMI
 bmi_data <- bmi_data %>%
   mutate(LINT_b = case_when(sex == "M" ~
@@ -563,20 +564,21 @@ bmi_basefile <- bmi_data %>%
                     clin_cent_grp5 clin_cent_grp6 clin_cent_grp7))
 
 # This file contains data for school years 2001/02 to 2017/18 and should 
-# be used for information requests etc.
-# so that any figures produced match those published in for financial year 2017/18.
+# be used for information requests etc. so that any figures produced match 
+# those published in financial year 2017/18.
 saveRDS(bmi_basefile, (host_folder, "BMI_data_0102_1718.rds"))
 
 
 
+### Health board analysis
+
 # SQ
 # create population file from the GRO mid year population estimates
-# of five year olds in each HB and for all participating Boards
+# of five year olds in each HB and for all participating boards
 hb_pop_estimates <-
 
 
-# HB analysis
-# HB and all participating boards analysis
+# create totals for individual hb and all participating boards 
 # Board level
 hb_data <- rbind(bmi_basefile %>% group_by(HB2018, schlyr_exam) %>%
                    summarise_at(vars(tot:clin_cent_grp7), sum),
@@ -586,18 +588,53 @@ hb_data <- rbind(bmi_basefile %>% group_by(HB2018, schlyr_exam) %>%
                    mutate(HB2018 = "Total")) %>% ungroup()
 
 
-
 # Match hb data to hb population estimates
-hb_data <- left_join(hb-data, hb_pop_estimates, 
+hb_data <- left_join(hb_data, hb_pop_estimates, 
                      by = c(HB2018, schlyr_exam))
 
 
-# Confidence intervals
+# Confidence intervals (hb)
+# use the function to calculate confidence intervals
 
 
 
 
-# Council area analysis
+
+
+
+
+### Council Area analysis
+
+# create population file from the GRO mid year population estimates
+# of five year olds in each ca 
+ca_pop_estimates <- 
+
+
+
+# create totals for individual council areas
+ca_data <- rbind(bmi_basefile %>% group_by(carea, schlyr_exam) %>%
+                     summarise_at(vars(tot:clin_cent_grp7), sum))
+
+# Select council areas with a valid population. Some council areas 
+# may have small numbers for years that they did not participate.
+ca_data <- subset(ca_data, tot >50)
+
+# Match ca data to ca population estimates
+ca_data <- left_join(ca_data, ca_pop_estimates, 
+                     by = c(carea, schlyr_exam))
+
+
+# Confidence intervals (ca)
+# use the function to calculate confidence intervals
+
+
+
+
+
+
+
+
+
 
 
 
