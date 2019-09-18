@@ -311,7 +311,7 @@ grd <- readRDS(file.path(host_folder, "ReferenceFiles",
 
 # Merge data
 bmi_data <- bmi_data %>%
-  merge(bmi_data, grd, by = "ageyr", all.x = TRUE, all.y = TRUE)
+  left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
 # Rename the Growth Reference variables for the lowest whole month
 # converted to years (LO)
   dplyr::rename(LMLO_b = bmi_male_l, MMLO_b = bmi_male_m, SMLO_b = bmi_male_s,
@@ -329,14 +329,14 @@ bmi_data <- bmi_data %>%
 bmi_data <- mutate(bmi_data, ageyr = round(1000*(trunc(agemth)+1)/12)/1000)
 
 # Merge data
-bmi_data <-  merge(bmi_data, grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE)
+left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
   # Rename the Growth Reference variables for the highest whole month
   # converted to years (HI)
-  dplyr::rename(bmi_data, LMHI_b = bmi_male_l, MMHI_b = bmi_male_m, SMHI_b = bmi_male_s, 
+  dplyr::rename(LMHI_b = bmi_male_l, MMHI_b = bmi_male_m, SMHI_b = bmi_male_s,
                 LFHI_b = bmi_female_l, MFHI_b = bmi_female_m, SFHI_b = bmi_female_s,
                 LMHI_h = height_male_l, MMHI_h = height_male_m, SMHI_h = height_male_s,
                 LFHI_h = height_female_l, MFHI_h = height_female_m, SFHI_h = height_female_s,
-                LMHI_w = weight_male_l, MMHI_w = weight_male_m, SMHI_w = weight_male_s, 
+                LMHI_w = weight_male_l, MMHI_w = weight_male_m, SMHI_w = weight_male_s,
                 LFHI_w = weight_female_l, MFHI_w = weight_female_m, SFHI_w = weight_female_s,
                 agehi = ageyr)
 
@@ -348,66 +348,84 @@ bmi_data <- bmi_data %>%
 bmi_data <- subset(bmi_data, !is.na(sex))
 # Interpolation - BMI
 bmi_data <- bmi_data %>%
-  if (istrue(bmi_data$sex == "M"))
-    {mutate(LINT_b=(LMHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LMHI_b-LMLO_b)),
-            MINT_b=(MMHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MMHI_b-MMLO_b)),
-            SINT_b=(SMHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SMHI_b-SMLO_b)))
-    } else if ((substr(bmi_data$sex,1,1) == "F"))
-    {mutate(LINT_b=(LFHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LFHI_b-LFLO_b)),
-            MINT_b=(MFHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MFHI_b-MFLO_b)),
-            SINT_b=(SFHI_b-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SFHI_b-SFLO_b)))
-    } else {"Unexpected value for sex"
-    }
+  mutate(LINT_b = case_when(sex == "M" ~
+                              (LMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(LMHI_b-LMLO_b)),
+                            sex == "F" ~
+                              (LFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(LFHI_b-LFLO_b)),
+                            TRUE ~ 0),
+         MINT_b= case_when(sex == "M" ~
+                             (MMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(MMHI_b-MMLO_b)),
+                           sex == "F" ~
+                             (MFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(MFHI_b-MFLO_b)),
+                           TRUE ~ 0),
+         SINT_b= case_when(sex == "M" ~
+                             (SMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(SMHI_b-SMLO_b)),
+                           sex == "F" ~
+                             (SFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(SFHI_b-SFLO_b)),
+                           TRUE ~ 0))
 
 
 # Interpolation - Height
 bmi_data <- bmi_data %>%
-  if (bmi_data$sex == "M")
-  {mutate(LINT_h=(LMHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LMHI_h-LMLO_h)),
-          MINT_h=(MMHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MMHI_h-MMLO_h)),
-          SINT_h=(SMHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SMHI_h-SMLO_h)))
-  } else if (sex == "F")
-    {mutate(LINT_h=(LFHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LFHI_h-LFLO_h)),
-            MINT_h=(MFHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MFHI_h-MFLO_h)),
-            SINT_h=(SFHI_h-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SFHI_h-SFLO_h)))
-  }
+  mutate(LINT_h = case_when(sex == "M" ~
+                              (LMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(LMHI_h-LMLO_h)),
+                            sex == "F" ~
+                              (LFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(LFHI_h-LFLO_h)),
+                            TRUE ~ 0),
+         MINT_h= case_when(sex == "M" ~
+                             (MMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(MMHI_h-MMLO_h)),
+                           sex == "F" ~
+                             (MFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(MFHI_h-MFLO_h)),
+                           TRUE ~ 0),
+         SINT_h= case_when(sex == "M" ~
+                             (SMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(SMHI_h-SMLO_h)),
+                           sex == "F" ~
+                             (SFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(SFHI_h-SFLO_h)),
+                           TRUE ~ 0))
 
 
 # Interpolation - Weight
 bmi_data <- bmi_data %>%
-  if (bmi_data$sex == "M")
-  {mutate(LINT_w=(LMHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LMHI_w-LMLO_w)),
-          MINT_w=(MMHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MMHI_w-MMLO_w)),
-          SINT_w=(SMHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SMHI_w-SMLO_w)))
-  } else if (sex == "F")
-  {mutate(LINT_w=(LFHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(LFHI_w-LFLO_w)),
-          MINT_w=(MFHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(MFHI_w-MFLO_w)),
-          SINT_w=(SFHI_w-((AGEHI-(ageyrs2decimal))/(AGEHI-AGELO))*(SFHI_w-SFLO_w)))
-  }
+  mutate(LINT_w = case_when(sex == "M" ~
+                              (LMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(LMHI_w-LMLO_w)),
+                            sex == "F" ~
+                              (LFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(LFHI_w-LFLO_w)),
+                            TRUE ~ 0),
+         MINT_w= case_when(sex == "M" ~
+                             (MMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(MMHI_w-MMLO_w)),
+                           sex == "F" ~
+                             (MFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(MFHI_w-MFLO_w)),
+                           TRUE ~ 0),
+         SINT_w= case_when(sex == "M" ~
+                             (SMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(SMHI_w-SMLO_w)),
+                           sex == "F" ~
+                             (SFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(SFHI_w-SFLO_w)),
+                           TRUE ~ 0))
 
 
-#Calculate standard deviation scores
+# Calculate standard deviation scores
+# pnorm is the R function for Cumulative Distribution Function (CDF)
 bmi_data <- bmi_data %>%
   mutate((bmi_2nd = round(bmi, 2)),
-         # Calculate SD (standardised) score using BMI to two decimal places.
-         SDS2_b = (((bmi_2nd/MINT_b)**LINT_b)-1)/(LINT_b*SINT_b),
-         #compute SDS to 2 decimal places.
-         SDS2_b=round(SDS2_b,2),
-         # Calculate centiles. pnorm is the R function for Cumulative Distribution Function (CDF)
+         # Calculate sd (standardised) score using BMI to two decimal places.
+         sds2_b = (((bmi_2nd/MINT_b)**LINT_b)-1)/(LINT_b*SINT_b),
+         #compute sds to 2 decimal places.
+         sds2_b=round(sds2_b,2),
+         # Calculate centiles. 
          cent_b=100 * pnorm(SDS_b, mean = 0, sd = 1),
-         (height_2nd = round(h, 2)),
-         # Calculate SD (standardised) score using height to two decimal places.
-         SDS2_h = (((height_2nd/MINT_h)**LINT_h)-1)/(LINT_h*SINT_h),
-         #compute SDS to 2 decimal places.
-         SDS2_h=round(SDS2_h,2),
+         (height_2nd = round((height/10), 2)),
+         # Calculate sd (standardised) score using height to two decimal places.
+         sds2_h = (((height_2nd/MINT_h)**LINT_h)-1)/(LINT_h*SINT_h),
+         #compute sds to 2 decimal places.
+         sds2_h=round(sds2_h,2),
          # Calculate centiles.
          cent_h=100 * pnorm(SDS_h, mean = 0, sd = 1),
-         (weight_2nd = round(w, 2)),
-         # Calculate SD (standardised) score using height to two decimal places.
-         SDS2_w = (((weight_2nd/MINT_w)**LINT_w)-1)/(LINT_w*SINT_w),
-         #compute SDS to 2 decimal places.
-         SDS2_w=round(SDS2_w,2),
-         # Calculate centiles. pnorm is the R function for Cumulative Distribution Function (CDF)
+         (weight_2nd = round(weight, 2)),
+         # Calculate sd (standardised) score using weight to two decimal places.
+         sds2_w = (((weight_2nd/MINT_w)**LINT_w)-1)/(LINT_w*SINT_w),
+         #compute sds to 2 decimal places.
+         sds2_w=round(sds2_w,2),
+         # Calculate centiles.
          cent_w=100 * pnorm(SDS_w, mean = 0, sd = 1))
 
 # select out those outwith the range deemed to be real.
@@ -417,27 +435,23 @@ bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) & (sds_h >= -7 & sds_h <
 #Lines 490-506. TO BE FIXED.
 # Create epidemiological and clinical thresholds
 # epidemiological
-bmi_data <- bmi_data %<%
-  case_when(
-            (cent_b <= 2) ~ cent_grp1 = 1,
-            ((cent_b > 2) & (cent_b < 85)) ~ cent_grp2 = 1,
-            ((cent_b >= 85) & (cent_b < 95)) ~ cent_grp3 = 1,
-            (cent_b >= 95) ~ cent_grp4 = 1,
-            (cent_b >= 85) ~ cent_grp5 = 1
-            )
+bmi_data <- bmi_data %>%
+  mutate(cent_grp1 = ifelse(cent_b <= 2, 1, 0),
+         cent_grp2 = ifelse((cent_b > 2) && (cent_b < 85), 1, 0),
+         cent_grp3 = ifelse((cent_b >= 85) && (cent_b < 95), 1, 0),
+         cent_grp4 = ifelse(cent_b >= 95, 1, 0),
+         cent_grp5 = ifelse(cent_b >= 85, 1, 0))
 
 
 # clinical
 bmi_data <- bmi_data %<%
-  case_when(
-            (SDS_b <= -2.67) ~ clin_cent_grp1 = 1,
-            ((SDS_b > -2.67) & (SDS_b < 1.33)) ~ clin_cent_grp2 = 1,
-            ((SDS_b >=1.33) & (SDS_b < 2)) ~ clin_cent_grp3 = 1,
-            ((SDS_b >= 2) & (SDS_b < 2.67)) ~ clin_cent_grp4 = 1,
-            (SDS_b >= 2.67) ~ clin_cent_grp5 = 1,
-            (SDS_b >= 1.33) ~ clin_cent_grp6 = 1,
-            (SDS_b >= 2) ~ clin_cent_grp7 = 1
-            )
+  mutate(clin_cent_grp1 = ifelse(SDS_b <= -2.67, 1, 0),
+         clin_cent_grp2 = ifelse((SDS_b > -2.67) & (SDS_b < 1.33), 1, 0),
+         clin_cent_grp3 = ifelse((SDS_b >=1.33) & (SDS_b < 2), 1, 0),
+         clin_cent_grp4 = ifelse((SDS_b >= 2) & (SDS_b < 2.67), 1, 0),
+         clin_cent_grp5 = ifelse(SDS_b >= 2.67, 1, 0),
+         clin_cent_grp6 = ifelse(SDS_b >= 1.33, 1, 0),
+         clin_cent_grp7 = ifeles(SDS_b >= 2, 1, 0))
 
 #Lines 508 - 
 bmi_data <- bmi_data %>%
@@ -447,115 +461,50 @@ arrange(pc7)
 #saveRDS(host_folder, "BMI_data_0102_1718.rds")
 
 # read in deprivation lookup. 
-simd2016 <- readRDS(paste0(lookupFolder,
-                           "/Unicode/Deprivation/postcode_2019_2_simd2016.rds"))
-simd2016 <- subset(simd2016, select = c(pc7, simd2016_sc_quintile))
-simd2012 <- read_spss(paste0(lookupFolder,
-                             "/Unicode/Deprivation/postcode_2016_1_simd2012.sav"))
-simd2012 <- subset(simd2012, select = c(pc7, simd2012_sc_quintile))
-simd2009 <- read_spss(paste0(lookupFolder,
-                             "/Unicode/Deprivation/postcode_2012_2_simd2009v2.sav"))
-simd2009 <- subset(simd2009, select = c(pc7, simd2009v2_sc_quintile))
-dplyr::rename(simd2009, pc7 = PC7)
-simd2006 <- read_spss(paste0(lookupFolder, 
-                             "/Unicode/Deprivation/postcode_2009_2_simd2006.sav"))
-simd2006 <- subset(simd2006, select = c(pc7, simd2006_sc_quintile))
-dplyr::rename(simd2006, pc7 = PC7)
-simd2004 <- read_spss(paste0(lookupFolder, 
-                             "/Unicode/Deprivation/postcode_2006_2_simd2004.sav"))
-simd2004 <- subset(simd2004, select = c(pc7, simd2004_sc_quintile))
-dplyr::rename(simd2004, pc7 = PC7)
+simd_2016 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Deprivation/postcode_2019_2_simd2016.rds")) %>%
+  select(pc7, simd2016_sc_quintile)
 
+simd_2012 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Deprivation/postcode_2016_1_simd2012.rds")) %>%
+  select(pc7, simd2012_sc_quintile)
 
-#Is this more efficient?
-# simd2016 <- readRDS(paste0(lookupFolder, 
-#                            "/Unicode/Deprivation/postcode_2019_2_simd2016.rds")) %>%
-#   select(pc7, simd2016_sc_quintile) %>%
-#   rename(postcode = pc7,
-#          simd = simd2016_sc_quintile) %>%
-#   mutate(year = "simd_2016")
-# 
-# simd_2012 <- read_spss(paste0(lookupFolder, 
-#                               "/Unicode/Deprivation/postcode_2016_1_simd2012.sav")) %>%
-#   select(pc7, simd2012_sc_quintile) %>%
-#   rename(postcode = pc7,
-#          simd = simd2012_sc_quintile) %>%
-#   mutate(year = "simd_2012")
-# 
-# simd_2009 <- read_spss(paste0(lookupFolder,
-#                               "/Unicode/Deprivation/",
-#                               "postcode_2012_2_simd2009v2.sav")) %>%
-#   select(PC7, simd2009v2_sc_quintile) %>%
-#   rename(postcode = PC7,
-#          simd = simd2009v2_sc_quintile) %>%
-#   mutate(year = "simd_2009")
-# 
-# simd_2006 <- read_spss(paste0(lookupFolder,
-#                               "/Unicode/Deprivation/",
-#                               "postcode_2009_2_simd2006.sav")) %>%
-#   select(PC7, simd2006_sc_quintile) %>%
-#   rename(postcode = PC7,
-#          simd = simd2006_sc_quintile) %>%
-#   mutate(year = "simd_2006")
-# 
-# simd_2004 <- read_spss(paste0(lookupFolder,
-#                               "/Unicode/Deprivation/",
-#                               "postcode_2006_2_simd2004.sav")) %>%
-#   select(PC7, simd2004_sc_quintile) %>%
-#   rename(postcode = PC7,
-#          simd = simd2004_sc_quintile) %>%
-#   mutate(year = "simd_2004")
+simd_2009 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Deprivation/", "postcode_2012_2_simd2009v2.rds")) %>%
+  select(pc7, simd2009v2_sc_quintile)
 
-# Assign the appropriate SIMD value to a patient depending on the year they
-# were admitted
-# data <- data %>%
-#   mutate(simd = case_when(
-#     year >= 2014 ~ simd2016_sc_quintile,
-#     year >= 2010 & year <= 2013 ~ simd2012_sc_quintile,
-#     year >= 2007 & year <= 2009 ~ simd2009v2_sc_quintile,
-#     year >= 2004 & year <= 2006 ~ simd2006_sc_quintile,
-#     year <= 2003 ~ simd2004_sc_quintile
-#   )) 
+simd_2006 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Deprivation/", "postcode_2009_2_simd2006.rds")) %>%
+  select(pc7, simd2006_sc_quintile)
 
-simdMerge <- function(x, y){
-  df <- merge(x, y, by= "pc7", all.x= TRUE, all.y= TRUE)
-  return(df)
-}
-simd <- Reduce(simdMerge, list(simd2016, simd2012, simd2009, simd2006, simd2004))
+simd_2004 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Deprivation/", "postcode_2006_2_simd2004.rds")) %>%
+  select(pc7, simd2004_sc_quintile)
 
+#Recode simd 2004 & 2006 so all go from 1=most to 5=least - this was required for creating allsimdyear/allsimdfinyear----------------*.
+#Still to change labels
 rescale <- function(x_i){
   5-x_i
 }
+
+all_simd <- list(simd_2004, simd_2006, simd_2009, simd_2012, simd_2016) %>%
+  Reduce(function(dtf1,dtf2) left_join(dtf1,dtf2,by="pc7"), .)
+
+#to fix - not being applied???
+allsimd <- all_simd %>%
+  mutate(simd2004_sc_quintile <- sapply(simd2004_sc_quintile, rescale),
+         simd2006_sc_quintile <- sapply(simd2006_sc_quintile, rescale))
+
+#Assign the appropriate SIMD value to a record depending on the year
 bmi_data <- bmi_data %>%
-  merge(bmi_data, simd, by = pc7)
-#Recode simd so all go from 1=most to 5=least - this was required for creating allsimdyear/allsimdfinyear----------------*.
-#Still to change labels
-mutate(simd2004_sc_quintile <- sapply(simd2004_sc_quintile,rescale),
-       simd2006_sc_quintile <- sapply(simd2006_sc_quintile,rescale),
-       allsimdfinyear=0)
-
-
-#if(schlyr_exam ==a allsimdfinyear=b)
-bmi_data < bmi_data %>%
-  for (schlyr_exam in c('0102', '0203', '0304', '0405', '0506', '0607','0708', '0809', '0910','1011',
-                        '1112', '1213', '1314', '1415', '1516', '1617', '1718')) {
-    allsimdfinyear <- c('simd2004_sc_quintile', 'simd2004_sc_quintile', 'simd2004_sc_quintile',
-                        'simd2006_sc_quintile', 'simd2006_sc_quintile', 'simd2006_sc_quintile',
-                        'simd2009v2_sc_quintile', 'simd2009v2_sc_quintile','simd2009v2_sc_quintile',
-                        'simd2012_sc_quintile', 'simd2012_sc_quintile', 'simd2012_sc_quintile',
-                        'simd2012_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile',
-                        'simd2016_sc_quintile',
-                        'simd2016_sc_quintile')}
-# a= c('0102', '0203', '0304', '0405', '0506', '0607','0708', '0809', '0910','1011', '1112', '1213', '1314',
-#      '1415', '1516', '1617', '1718')
-# b= c('simd2004_sc_quintile', 'simd2004_sc_quintile', 'simd2004_sc_quintile', 'simd2006_sc_quintile',
-#      'simd2006_sc_quintile', 'simd2006_sc_quintile', 'simd2009v2_sc_quintile', 'simd2009v2_sc_quintile',
-#      'simd2009v2_sc_quintile', 'simd2012_sc_quintile', 'simd2012_sc_quintile', 'simd2012_sc_quintile',
-#      'simd2012_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile', 'simd2016_sc_quintile',
-#      'simd2016_sc_quintile')
-# bmi_data < bmi_data %>%
-#   for (schlyr_exam in a) {
-#     allsimdfinyear <- b}
+  merge(all_simd, by = "pc7") %>%
+  bmi_data <- bmi_data %>% mutate(simd = case_when(
+    schlyr_exam %in% c("1415", "1516", "1617", "1718", "1819") ~ simd2016_sc_quintile,
+    schlyr_exam %in% c("1011", "1112", "1213", "1314") ~ simd2012_sc_quintile,
+    schlyr_exam %in% c("0708", "0809", "0910") ~ simd2009v2_sc_quintile,
+    schlyr_exam %in% c("0405", "0607", "1213") ~ simd2006_sc_quintile,
+    schlyr_exam %in% c("0102", "0203", "0304") ~ simd2004_sc_quintile
+  ))
 mutate(simd = allsimdfinyear),
 if is.na(allsimdfinyear) simd='U', #x of n records don't have a SIMD quintile.
 
@@ -604,13 +553,17 @@ arrange(bmi_data, chi)
 
 
 bmi_basefile <- bmi_data %>%
-  subset(select = c(chi id HB2018 CA2018 CA carea sex1 height weight daterec schlyr_exam schlgivn rev_num agemth nyob mob dob PC7
-                    simd2016_sc_quintile simd2012_sc_quintile simd2009v2_sc_quintile simd2006_sc_quintile simd2004_sc_quintile simd sex h w hm BMI 
-                    cent_grp1 cent_grp2 cent_grp3 cent_grp4 cent_grp5 tot clin_cent_grp1 clin_cent_grp2 clin_cent_grp3 clin_cent_grp4 clin_cent_grp5 clin_cent_grp6 clin_cent_grp7
-                    AGELO LMLO_b MMLO_b SMLO_b LFLO_b MFLO_b SFLO_b AGEHI LMHI_b MMHI_b SMHI_b LFHI_b MFHI_b SFHI_b LINT_b MINT_b SINT_b SDS_b cent_b
-                    LMLO_h MMLO_h SMLO_h LFLO_h MFLO_h SFLO_h LMHI_h MMHI_h SMHI_h LFHI_h MFHI_h SFHI_h LINT_h MINT_h SINT_h SDS_h cent_h
-                    LMLO_w MMLO_w SMLO_w LFLO_w MFLO_w SFLO_w LMHI_w MMHI_w SMHI_w LFHI_w MFHI_w SFHI_w LINT_w MINT_w SINT_w SDS_w cent_w))
-# This file contains data for school years 2001/02 to 2017/18 and should be used for information requests etc.
+  subset(select = c(chi id HB2018 CA2018 CA carea sex1 height weight daterec 
+                    schlyr_exam schlgivn rev_num agemth nyob mob dob PC7
+                    simd2016_sc_quintile simd2012_sc_quintile 
+                    simd2009v2_sc_quintile simd2006_sc_quintile 
+                    simd2004_sc_quintile simd sex h w hm BMI 
+                    cent_grp1 cent_grp2 cent_grp3 cent_grp4 cent_grp5 tot 
+                    clin_cent_grp1 clin_cent_grp2 clin_cent_grp3 clin_cent_grp4 
+                    clin_cent_grp5 clin_cent_grp6 clin_cent_grp7))
+
+# This file contains data for school years 2001/02 to 2017/18 and should 
+# be used for information requests etc.
 # so that any figures produced match those published in for financial year 2017/18.
 saveRDS(bmi_basefile, (host_folder, "BMI_data_0102_1718.rds"))
 
