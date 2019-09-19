@@ -457,10 +457,10 @@ bmi_data <- bmi_data %>%
          clin_cent_grp6 = ifelse(sds_b >= 1.33, 1, 0),
          clin_cent_grp7 = ifelse(sds_b >= 2, 1, 0))
 
-#Lines 508 - 
-bmi_data <- bmi_data %>%
-  mutate(bmi_data, tot = 1)
-arrange(pc7)
+#Lines 508 -
+mutate(bmi_data, tot = 1)
+#this can't be piped??
+arrange(bmi_data, pc7)
 
 #saveRDS(host_folder, "BMI_data_0102_1718.rds")
 
@@ -489,7 +489,7 @@ simd_2004 <- readRDS(paste0(
 # required for creating allsimdyear/allsimdfinyear
 # Still to change labels
 rescale <- function(x_i){
-  5-x_i
+  6-x_i
 }
 
 all_simd <- list(simd_2004, simd_2006, simd_2009, simd_2012, simd_2016) %>%
@@ -503,7 +503,7 @@ allsimd <- all_simd %>%
 #Assign the appropriate SIMD value to a record depending on the year
 bmi_data <- bmi_data %>%
   merge(all_simd, by = "pc7") %>%
-  bmi_data <- bmi_data %>% mutate(simd = case_when(
+  mutate(simd = case_when(
     schlyr_exam %in% c("1415", "1516", "1617", "1718", "1819") 
     ~ simd2016_sc_quintile,
     schlyr_exam %in% c("1011", "1112", "1213", "1314") 
@@ -515,20 +515,20 @@ bmi_data <- bmi_data %>%
     schlyr_exam %in% c("0102", "0203", "0304") 
     ~ simd2004_sc_quintile
   ))
-mutate(simd = allsimdfinyear),
-if is.na(allsimdfinyear) simd='U', #x of n records don't have a SIMD quintile.
 
 # Councils - create the old CA with codes 01-32 ; the new codes are 
 # made unique by the last 2 chars so use them   .
-bmi_data < bmi_data %>%
-  for (CA in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", 
-               "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", 
-               "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", 
-               "40", "13")) {
-       CA <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", 
-               "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
-               "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
-               "31", "32")}, 
+mutate(bmi_data, ca = substr(CA2019, 8, 9))
+bmi_data <- bmi_data %>%       
+  for (ca in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", 
+                      "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", 
+                      "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", 
+                      "40", "13")) {
+    ca <-  c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", 
+                      "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
+                      "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
+                      "31", "32")}
+       
 mutate(council_area_name <- sapply(council_area_name, rescale)), 
 # CA_name = case_when(CA == 1 ~ "Aberdeen City",
 #                     CA == 2 ~ "Aberdeenshire",
