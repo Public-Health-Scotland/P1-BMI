@@ -287,12 +287,13 @@ bmi_data <- subset(bmi_data, weight != 0) #603,685 obs
 bmi_data <- subset(bmi_data, !is.na(sex))
 
 # Create variable to show height in metres
-#height in mm???
+#height in mm, weight in cg???
 bmi_data <- mutate(bmi_data, height_m = height/1000)
+bmi_data <- mutate(bmi_data, weight_kg = weight/100)
 
 
 # Calculate BMI
-bmi_data <- mutate(bmi_data, bmi = weight/(height_m*height_m))
+bmi_data <- mutate(bmi_data, bmi = weight_kg/(height_m*height_m))
 
 # Child's age in months will lie between two ages in 
 # in the lookup table. Line below calculates the next 
@@ -326,8 +327,8 @@ bmi_data <- bmi_data %>%
 # Child's age in months will lie between two ages in 
 # in the lookup table. Line below calculates the next 
 # highest whole month and converts to years.
-bmi_data <- mutate(bmi_data, ageyr = round(1000*(trunc(agemth)+1)/12)/1000)
-
+bmi_data <- bmi_data %>%
+  mutate(ageyr = round(1000*(trunc(agemth)+1)/12)/1000) %>%
 # Merge data
 left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
   # Rename the Growth Reference variables for the highest whole month
@@ -350,57 +351,56 @@ bmi_data <- subset(bmi_data, !is.na(sex))
 # Interpolation - BMI
 bmi_data <- bmi_data %>%
   mutate(LINT_b = case_when(sex == "M" ~
-                              (LMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(LMHI_b-LMLO_b)),
+                            (LMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LMHI_b-LMLO_b)),
                             sex == "F" ~
-                              (LFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(LFHI_b-LFLO_b)),
+                              (LFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LFHI_b-LFLO_b)),
                             TRUE ~ 0),
          MINT_b= case_when(sex == "M" ~
-                             (MMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(MMHI_b-MMLO_b)),
+                             (MMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(MMHI_b-MMLO_b)),
                            sex == "F" ~
-                             (MFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(MFHI_b-MFLO_b)),
+                             (MFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(MFHI_b-MFLO_b)),
                            TRUE ~ 0),
          SINT_b= case_when(sex == "M" ~
-                             (SMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(SMHI_b-SMLO_b)),
+                             (SMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SMHI_b-SMLO_b)),
                            sex == "F" ~
-                             (SFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))(SFHI_b-SFLO_b)),
+                             (SFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SFHI_b-SFLO_b)),
                            TRUE ~ 0))
-
 
 # Interpolation - Height
 bmi_data <- bmi_data %>%
-  mutate(LINT_h = case_when(sex == "M" ~
-                              (LMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(LMHI_h-LMLO_h)),
+  mutate(LINT_h = case_when(sex == "M" ~ 
+                              (LMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LMHI_h-LMLO_h)),
                             sex == "F" ~
-                              (LFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(LFHI_h-LFLO_h)),
+                              (LFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LFHI_h-LFLO_h)),
                             TRUE ~ 0),
          MINT_h= case_when(sex == "M" ~
-                             (MMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(MMHI_h-MMLO_h)),
+                             (MMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))*(MMHI_h-MMLO_h)),
                            sex == "F" ~
-                             (MFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(MFHI_h-MFLO_h)),
+                             (MFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))*(MFHI_h-MFLO_h)),
                            TRUE ~ 0),
          SINT_h= case_when(sex == "M" ~
-                             (SMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(SMHI_h-SMLO_h)),
+                             (SMHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SMHI_h-SMLO_h)),
                            sex == "F" ~
-                             (SFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))(SFHI_h-SFLO_h)),
+                             (SFHI_h-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SFHI_h-SFLO_h)),
                            TRUE ~ 0))
 
 
 # Interpolation - Weight
 bmi_data <- bmi_data %>%
   mutate(LINT_w = case_when(sex == "M" ~
-                              (LMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(LMHI_w-LMLO_w)),
+                              (LMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LMHI_w-LMLO_w)),
                             sex == "F" ~
-                              (LFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(LFHI_w-LFLO_w)),
+                              (LFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LFHI_w-LFLO_w)),
                             TRUE ~ 0),
          MINT_w= case_when(sex == "M" ~
-                             (MMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(MMHI_w-MMLO_w)),
+                             (MMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(MMHI_w-MMLO_w)),
                            sex == "F" ~
-                             (MFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(MFHI_w-MFLO_w)),
+                             (MFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(MFHI_w-MFLO_w)),
                            TRUE ~ 0),
          SINT_w= case_when(sex == "M" ~
-                             (SMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(SMHI_w-SMLO_w)),
+                             (SMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SMHI_w-SMLO_w)),
                            sex == "F" ~
-                             (SFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))(SFHI_w-SFLO_w)),
+                             (SFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SFHI_w-SFLO_w)),
                            TRUE ~ 0))
 
 
@@ -411,30 +411,32 @@ bmi_data <- bmi_data %>%
          # Calculate sd (standardised) score using BMI to two decimal places.
          sds2_b = (((bmi_2nd/MINT_b)**LINT_b)-1)/(LINT_b*SINT_b),
          #compute sds to 2 decimal places.
-         sds2_b=round(sds2_b,2),
+         sds_b=round(sds2_b,2),
          # Calculate centiles. 
-         cent_b=100 * pnorm(SDS_b, mean = 0, sd = 1),
-         (height_2nd = round((height/10), 2)),
+         cent_b=100 * pnorm(sds_b, mean = 0, sd = 1),
+         height_2nd = round((height/10), 2),
          # Calculate sd (standardised) score using height to two decimal places.
          sds2_h = (((height_2nd/MINT_h)**LINT_h)-1)/(LINT_h*SINT_h),
          #compute sds to 2 decimal places.
-         sds2_h=round(sds2_h,2),
+         sds_h=round(sds2_h,2),
          # Calculate centiles.
-         cent_h=100 * pnorm(SDS_h, mean = 0, sd = 1),
-         (weight_2nd = round(weight, 2)),
+         cent_h=100 * pnorm(sds_h, mean = 0, sd = 1),
+         weight_2nd = round(weight_kg, 2),
          # Calculate sd (standardised) score using weight to two decimal places.
          sds2_w = (((weight_2nd/MINT_w)**LINT_w)-1)/(LINT_w*SINT_w),
          #compute sds to 2 decimal places.
-         sds2_w=round(sds2_w,2),
+         sds_w=round(sds2_w,2),
          # Calculate centiles.
-         cent_w=100 * pnorm(SDS_w, mean = 0, sd = 1))
+         cent_w=100 * pnorm(sds_w, mean = 0, sd = 1))
 
+saveRDS(bmi_data, paste0(host_folder, "temp_all_reviews.rds"))
+bmi_data <- readRDS(paste0(host_folder, "temp_all_reviews.rds"))
 # select out those outwith the range deemed to be real.
 bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) & 
                      (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))
+#603,322 obs
 
 
-#Lines 490-506. TO BE FIXED.
 # Create epidemiological and clinical thresholds
 # epidemiological
 bmi_data <- bmi_data %>%
@@ -446,14 +448,14 @@ bmi_data <- bmi_data %>%
 
 
 # clinical
-bmi_data <- bmi_data %<%
-  mutate(clin_cent_grp1 = ifelse(SDS_b <= -2.67, 1, 0),
-         clin_cent_grp2 = ifelse((SDS_b > -2.67) & (SDS_b < 1.33), 1, 0),
-         clin_cent_grp3 = ifelse((SDS_b >=1.33) & (SDS_b < 2), 1, 0),
-         clin_cent_grp4 = ifelse((SDS_b >= 2) & (SDS_b < 2.67), 1, 0),
-         clin_cent_grp5 = ifelse(SDS_b >= 2.67, 1, 0),
-         clin_cent_grp6 = ifelse(SDS_b >= 1.33, 1, 0),
-         clin_cent_grp7 = ifeles(SDS_b >= 2, 1, 0))
+bmi_data <- bmi_data %>%
+  mutate(clin_cent_grp1 = ifelse(sds_b <= -2.67, 1, 0),
+         clin_cent_grp2 = ifelse((sds_b > -2.67) & (sds_b < 1.33), 1, 0),
+         clin_cent_grp3 = ifelse((sds_b >=1.33) & (sds_b < 2), 1, 0),
+         clin_cent_grp4 = ifelse((sds_b >= 2) & (sds_b < 2.67), 1, 0),
+         clin_cent_grp5 = ifelse(sds_b >= 2.67, 1, 0),
+         clin_cent_grp6 = ifelse(sds_b >= 1.33, 1, 0),
+         clin_cent_grp7 = ifelse(sds_b >= 2, 1, 0))
 
 #Lines 508 - 
 bmi_data <- bmi_data %>%
