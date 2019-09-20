@@ -37,10 +37,12 @@ library(tidyr)
 server_desktop <- "server"
 
 if (server_desktop == "server") {
-  host_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data"
+  host_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data/RAP"
+  source_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <- "/conf/linkage/output/lookups"
 } else if (server_desktop == "desktop") {
-  host_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data"
+  host_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data/RAP"
+  source_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <-"//Isdsf00d03/cl-out/lookups"
 }
 
@@ -54,7 +56,7 @@ currentYr <- 1718
 ## Import Data
 # Created R file for efficiency (SPSS syntax below)
 # bmi_data <- read_spss(paste(file.path(host_folder, "school_results.zsav")))
-bmi_data <- readRDS(paste(file.path(host_folder, "20181008", "School", "school_results.rds")))            #1.614m obs.
+bmi_data <- readRDS(paste(file.path(source_folder, "20181008", "School", "school_results.rds")))            #1.614m obs.
 
 ## Subset for required variables only
 bmi_data <- subset(bmi_data, select = c(chi, schlyr_exam, id, rev_num, schlgivn, height, weight, bmi,
@@ -98,7 +100,7 @@ bmi_data <- bmi_data %>%
 
 ## Postcode match for 2001/02 to 2009/10
 # Import postcode reference file
-pcRef <- readRDS(file.path(host_folder, "ReferenceFiles", "postcode_at_review_2000_2010_school.rds"))
+pcRef <- readRDS(file.path(source_folder, "ReferenceFiles", "postcode_at_review_2000_2010_school.rds"))
 
 # Merge bmi_data with the postcode reference file
 bmi_data <- merge(bmi_data, pcRef[,c("chi", "postcode", "schlyr_exam")],
@@ -125,7 +127,7 @@ bmi_data$examQN <- floor((difftime(as.Date(bmi_data$daterec, '%Y%m%d'), as.Date(
 bmi_data$chiQ <- paste(bmi_data$chi, bmi_data$examQN, sep = "")
 
 # Import reference file
-pcQRef <- haven::read_spss(file.path(host_folder, "Cohorts", "chiQ.zsav"))
+pcQRef <- haven::read_spss(file.path(source_folder, "Cohorts", "chiQ.zsav"))
 
 # Merge bmi_data with postcode reference file
 bmi_data <- merge(bmi_data, pcQRef[,c("chiQ", "pcodeCHI")], by = c("chiQ"), all.x = TRUE, all.y = FALSE)
@@ -252,7 +254,7 @@ bmi_data <- bmi_data %>%
         agemth = lubridate::interval(datedob,daterev) %/% months(1))
 
 # Apply the dictionary from the Dictionary school file
-dictdf <- haven::read_spss(paste(file.path(host_folder, "ReferenceFiles", "Dictionary_School.sav")))
+dictdf <- haven::read_spss(paste(file.path(source_folder, "ReferenceFiles", "Dictionary_School.sav")))
 fulldatadic <- tibble(name = colnames(dictdf),
                       label = dictdf %>%
                         purrr::map(~ attr(.x, "label")) %>%
@@ -307,7 +309,7 @@ bmi_data <- mutate(bmi_data, ageyr = round(1000*trunc(agemth)/12)/1000)
 # The corresponding L,M,S are the lowest (LO) values used in the interpolation.
 bmi_data <- arrange(bmi_data, ageyr)
 
-grd <- readRDS(file.path(host_folder, "ReferenceFiles",
+grd <- readRDS(file.path(source_folder, "ReferenceFiles",
                          "UK1990_BMI_Growth_Reference_Data.rds"))
 
 # Merge data
@@ -455,10 +457,9 @@ bmi_data <- bmi_data %>%
          clin_cent_grp4 = ifelse((sds_b >= 2) & (sds_b < 2.67), 1, 0),
          clin_cent_grp5 = ifelse(sds_b >= 2.67, 1, 0),
          clin_cent_grp6 = ifelse(sds_b >= 1.33, 1, 0),
-         clin_cent_grp7 = ifelse(sds_b >= 2, 1, 0))
+         clin_cent_grp7 = ifelse(sds_b >= 2, 1, 0),
+         tot = 1)
 
-#Lines 508 -
-mutate(bmi_data, tot = 1)
 #this can't be piped??
 arrange(bmi_data, pc7)
 
@@ -516,73 +517,76 @@ bmi_data <- bmi_data %>%
     ~ simd2004_sc_quintile
   ))
 
+#No longer need the old ca code. Was only used to generate table key. can use current ca code.
 # Councils - create the old CA with codes 01-32 ; the new codes are 
 # made unique by the last 2 chars so use them   .
-mutate(bmi_data, ca = substr(CA2019, 8, 9))
-bmi_data <- bmi_data %>%       
-  for (ca in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", 
-                      "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", 
-                      "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", 
-                      "40", "13")) {
-    ca <-  c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", 
-                      "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
-                      "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
-                      "31", "32")}
+# mutate(bmi_data, ca = substr(CA2019, 8, 9))
+# bmi_data <- bmi_data %>%       
+#   for (ca in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", 
+#                       "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", 
+#                       "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", 
+#                       "40", "13")) {
+#     ca <-  c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", 
+#                       "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
+#                       "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
+#                       "31", "32")}
        
-mutate(council_area_name <- sapply(council_area_name, rescale)), 
-# CA_name = case_when(CA == 1 ~ "Aberdeen City",
-#                     CA == 2 ~ "Aberdeenshire",
-#                     CA == 3 ~ "Angus", 
-#                     CA == 4 ~ "Argyll & Bute",
-#                     CA == 5 ~ "Scottish Borders", 
-#                     CA == 6 ~ "Clackmannanshire",
-#                     CA == 7 ~ "West Dunbartonshire", 
-#                     CA == 8 ~ "Dumfries & Galloway",
-#                     CA == 9 ~ "Dundee City", 
-#                     CA == 10 ~ "East Ayrshire",
-#                     CA == 11 ~ "East Dunbartonshire", 
-#                     CA == 12 ~ "East Lothian",
-#                     CA == 13 ~ "East Renfrewshire", 
-#                     CA == 14 ~ "City of Edinburgh",
-#                     CA == 15 ~ "Falkirk",
-#                     CA == 16 ~ "Fife",
-#                     CA == 17 ~ "Glasgow City", 
-#                     CA == 18 ~ "Highland",
-#                     CA == 19 ~ "Inverclyde",
-#                     CA == 20 ~ "Midlothian",
-#                     CA == 21 ~ "Moray",
-#                     CA == 22 ~ "North Ayrshire",
-#                     CA == 23 ~ "North Lanarkshire", 
-#                     CA == 24 ~ "Orkney Islands",
-#                     CA == 25 ~ "Perth & Kinross",
-#                     CA == 26 ~ "Renfrewshire",
-#                     CA == 27 ~ "Shetland Islands",
-#                     CA == 28 ~ "South Ayrshire",
-#                     CA == 29 ~ "South Lanarkshire",
-#                     CA == 30 ~ "Stirling",
-#                     CA == 31 ~ "West Lothian",
-#                     CA == 32 ~ "Comhairle nan Eilean Siar",
-#                     TRUE ~ "Other"),
-mutate carea=paste("CA",CA),
+#mutate(council_area_name <- sapply(council_area_name, rescale)), 
+bmi_data <- mutate(bmi_data, ca_name = case_when(
+  substr(CA2019, 8, 9) == "33" ~ "Aberdeen City",
+  substr(CA2019, 8, 9) == "34" ~ "Aberdeenshire",
+  substr(CA2019, 8, 9) == "41" ~ "Angus",
+  substr(CA2019, 8, 9) == "35" ~ "Argyll & Bute",
+  substr(CA2019, 8, 9) == "26" ~ "Scottish Borders",
+  substr(CA2019, 8, 9) == "05" ~ "Clackmannanshire",
+  substr(CA2019, 8, 9) == "39" ~ "West Dunbartonshire",
+  substr(CA2019, 8, 9) == "06" ~ "Dumfries & Galloway",
+  substr(CA2019, 8, 9) == "42" ~ "Dundee City",
+  substr(CA2019, 8, 9) == "08" ~ "East Ayrshire",
+  substr(CA2019, 8, 9) == "45" ~ "East Dunbartonshire",
+  substr(CA2019, 8, 9) == "10" ~ "East Lothian",
+  substr(CA2019, 8, 9) == "11" ~ "East Renfrewshire",
+  substr(CA2019, 8, 9) == "36" ~ "City of Edinburgh",
+  substr(CA2019, 8, 9) == "14" ~ "Falkirk",
+  substr(CA2019, 8, 9) == "46" ~ "Fife",
+  substr(CA2019, 8, 9) == "47" ~ "Glasgow City",
+  substr(CA2019, 8, 9) == "17" ~ "Highland",
+  substr(CA2019, 8, 9) == "18" ~ "Inverclyde",
+  substr(CA2019, 8, 9) == "19" ~ "Midlothian",
+  substr(CA2019, 8, 9) == "20" ~ "Moray",
+  substr(CA2019, 8, 9) == "21" ~ "North Ayrshire",
+  substr(CA2019, 8, 9) == "44" ~ "North Lanarkshire",
+  substr(CA2019, 8, 9) == "43" ~ "Orkney Islands",
+  substr(CA2019, 8, 9) == "48" ~ "Perth & Kinross",
+  substr(CA2019, 8, 9) == "38" ~ "Renfrewshire",
+  substr(CA2019, 8, 9) == "27" ~ "Shetland Islands",
+  substr(CA2019, 8, 9) == "28" ~ "South Ayrshire",
+  substr(CA2019, 8, 9) == "29" ~ "South Lanarkshire",
+  substr(CA2019, 8, 9) == "30" ~ "Stirling",
+  substr(CA2019, 8, 9) == "31" ~ "West Lothian",
+  substr(CA2019, 8, 9) == "32" ~ "Comhairle nan Eilean Siar",
+  TRUE ~ "Other"))
+
+bmi_data <- mutate(bmi_data, carea = paste(substr(CA2019, 8, 9),ca_name))
 
 
 arrange(bmi_data, chi)
 
 
 bmi_basefile <- bmi_data %>%
-  subset(select = c(chi id HB2018 CA2018 CA carea sex1 height weight daterec 
-                    schlyr_exam schlgivn rev_num agemth nyob mob dob PC7
-                    simd2016_sc_quintile simd2012_sc_quintile 
-                    simd2009v2_sc_quintile simd2006_sc_quintile 
-                    simd2004_sc_quintile simd sex h w hm BMI 
-                    cent_grp1 cent_grp2 cent_grp3 cent_grp4 cent_grp5 tot 
-                    clin_cent_grp1 clin_cent_grp2 clin_cent_grp3 clin_cent_grp4 
-                    clin_cent_grp5 clin_cent_grp6 clin_cent_grp7))
+  subset(select = c(chi, id, HB2019, CA2019, carea, sex, height, weight, daterec, 
+                      schlyr_exam, schlgivn, rev_num, agemth, nyob, mob, dob, pc7,
+                      simd2016_sc_quintile, simd2012_sc_quintile, 
+                      simd2009v2_sc_quintile, simd2006_sc_quintile, 
+                      simd2004_sc_quintile, simd, sex, height_m, weight_kg, bmi, 
+                      cent_grp1, cent_grp2, cent_grp3, cent_grp4, cent_grp5, tot, 
+                      clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, 
+                      clin_cent_grp5, clin_cent_grp6, clin_cent_grp7))
 
 # This file contains data for school years 2001/02 to 2017/18 and should 
 # be used for information requests etc. so that any figures produced match 
 # those published in financial year 2017/18.
-saveRDS(bmi_basefile, (host_folder, "BMI_data_0102_1718.rds"))
+saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))
 
 
 
