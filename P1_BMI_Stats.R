@@ -642,16 +642,23 @@ apply_hb_year(HB = 'Z', ey = 809)
 apply_hb_year(HB = 'N', ey = 910)
 apply_hb_year(HB = 'R', ey = 1011)
 
+# create totals for individual hb and all 
+# participating boards (for hb_pop_estimates)
+# Board level
+hb_pop_estimates <- rbind(hb_pop_estimates %>% 
+                            group_by(HB2018, schlyr_exam)%>%
+                            summarise(pop),
+# Scotland level (all participating boards)
+                          hb_pop_estimates %>% group_by(schlyr_exam) %>%
+                            summarise(pop) %>%
+                            mutate(HB2018 = "Total"))
 
 
-
-
-
-# create totals for individual hb and all participating boards 
+# create totals for individual hb and all participating boards (for hb_data)
 # Board level
 hb_data <- rbind(bmi_basefile %>% group_by(HB2018, schlyr_exam) %>%
                    summarise_at(vars(tot:clin_cent_grp7), sum),
-                 # Scotland level (all participating boards)
+# Scotland level (all participating boards)
                  bmi_basefile %>% group_by(schlyr_exam) %>% 
                    summarise_at(vars(tot:clin_cent_grp7), sum) %>%
                    mutate(HB2018 = "Total")) %>% ungroup()
