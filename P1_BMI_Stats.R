@@ -37,11 +37,13 @@ library(tidyr)
 server_desktop <- "server"
 
 if (server_desktop == "server") {
-  host_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data/RAP"
+  host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity
+  /Publications/Primary1BMI/20191210/RAP"
   source_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <- "/conf/linkage/output/lookups"
 } else if (server_desktop == "desktop") {
-  host_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data/RAP"
+  host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity
+  /Publications/Primary1BMI/20191210/RAP"
   source_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <-"//Isdsf00d03/cl-out/lookups"
 }
@@ -443,8 +445,8 @@ bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) &
 # epidemiological
 bmi_data <- bmi_data %>%
   mutate(cent_grp1 = ifelse(cent_b <= 2, 1, 0),
-         cent_grp2 = ifelse((cent_b > 2) && (cent_b < 85), 1, 0),
-         cent_grp3 = ifelse((cent_b >= 85) && (cent_b < 95), 1, 0),
+         cent_grp2 = ifelse((cent_b > 2) & (cent_b < 85), 1, 0),
+         cent_grp3 = ifelse((cent_b >= 85) & (cent_b < 95), 1, 0),
          cent_grp4 = ifelse(cent_b >= 95, 1, 0),
          cent_grp5 = ifelse(cent_b >= 85, 1, 0))
 
@@ -618,8 +620,31 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819"))
-  
+                                 year == 2018 ~ "1819")) %>% 
+  # do we need to pipe to functions?
+  # call the function for creating HB cypher
+  apply_hb_cypher %>%
+  # can we pipe after functions?
+
+# call the function for selecing the relevant year for each board
+# do we need to pipe to functions?
+apply_hb_year(HB = 'F', ey = 102)
+apply_hb_year(HB = 'L', ey = 102)
+apply_hb_year(HB = 'S', ey = 102)
+apply_hb_year(HB = 'T', ey = 203)
+apply_hb_year(HB = 'W', ey = 304)
+apply_hb_year(HB = 'Y', ey = 405)
+apply_hb_year(HB = 'V', ey = 506)
+apply_hb_year(HB = 'G', ey = 607)
+apply_hb_year(HB = 'A', ey = 708)
+apply_hb_year(HB = 'H', ey = 809)
+apply_hb_year(HB = 'Z', ey = 809)
+apply_hb_year(HB = 'N', ey = 910)
+apply_hb_year(HB = 'R', ey = 1011)
+
+
+
+
 
 
 # create totals for individual hb and all participating boards 
