@@ -595,7 +595,31 @@ saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))
 # SQ
 # create population file from the GRO mid year population estimates
 # of five year olds in each HB and for all participating boards
-hb_pop_estimates <-
+hb_pop_estimates <- readRDS(paste0(
+  lookupFolder, "/Unicode/Population/Estimates/HB2019_pop_est_1981_2018.rds"))
+
+hb_pop_estimates <- hb_pop_estimates %>% 
+  filter(age == 5) %>%
+  filter(year >= 2000 & year <=2018) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314",
+                                 year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718",
+                                 year == 2018 ~ "1819"))
+  
 
 
 # create totals for individual hb and all participating boards 
