@@ -624,10 +624,9 @@ hb_pop_estimates <- hb_pop_estimates %>%
   # do we need to pipe to functions?
   # call the function for creating HB cypher
   apply_hb_cypher %>%
-  # can we pipe after functions?
+  # do we pipe after functions?
 
 # call the function for selecing the relevant year for each board
-# do we need to pipe to functions?
 apply_hb_year(HB = 'F', ey = 102)
 apply_hb_year(HB = 'L', ey = 102)
 apply_hb_year(HB = 'S', ey = 102)
