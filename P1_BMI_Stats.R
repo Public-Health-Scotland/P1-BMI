@@ -37,13 +37,11 @@ library(tidyr)
 server_desktop <- "server"
 
 if (server_desktop == "server") {
-  host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity
-  /Publications/Primary1BMI/20191210/RAP"
+  host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/"
   source_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <- "/conf/linkage/output/lookups"
 } else if (server_desktop == "desktop") {
-  host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity
-  /Publications/Primary1BMI/20191210/RAP"
+  host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/"
   source_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <-"//Isdsf00d03/cl-out/lookups"
 }
@@ -433,8 +431,8 @@ bmi_data <- bmi_data %>%
          # Calculate centiles.
          cent_w=100 * pnorm(sds_w, mean = 0, sd = 1))
 
-saveRDS(bmi_data, paste0(host_folder, "temp_all_reviews.rds"))
-bmi_data <- readRDS(paste0(host_folder, "temp_all_reviews.rds"))
+saveRDS(bmi_data, paste0(host_folder, "RAPtemp_all_reviews.rds"))
+bmi_data <- readRDS(paste0(host_folder, "RAPtemp_all_reviews.rds"))
 # select out those outwith the range deemed to be real.
 bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) & 
                      (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))
@@ -519,7 +517,8 @@ bmi_data <- bmi_data %>%
     ~ simd2004_sc_quintile
   ))
 
-#No longer need the old ca code. Was only used to generate table key. can use current ca code.
+# No longer need the old ca code. Was only used to generate table key. 
+# use current ca code.
 # Councils - create the old CA with codes 01-32 ; the new codes are 
 # made unique by the last 2 chars so use them   .
 # mutate(bmi_data, ca = substr(CA2019, 8, 9))
@@ -590,6 +589,7 @@ bmi_basefile <- bmi_data %>%
 # those published in financial year 2017/18.
 saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))
 
+bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
 
 
 ### Health board analysis
@@ -598,7 +598,7 @@ saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))
 # create population file from the GRO mid year population estimates
 # of five year olds in each HB and for all participating boards
 hb_pop_estimates <- readRDS(paste0(
-  lookupFolder, "/Unicode/Population/Estimates/HB2019_pop_est_1981_2018.rds"))
+  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds"))
 
 hb_pop_estimates <- hb_pop_estimates %>% 
   filter(age == 5) %>%
