@@ -598,7 +598,8 @@ bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
 # create population file from the GRO mid year population estimates
 # of five year olds in each HB and for all participating boards
 hb_pop_estimates <- readRDS(paste0(
-  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds"))
+  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop)
 
 hb_pop_estimates <- hb_pop_estimates %>% 
   filter(age == 5) %>%
@@ -623,34 +624,35 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2018 ~ "1819")) %>% 
   # do we need to pipe to functions?
   # call the function for creating HB cypher
-  apply_hb_cypher %>%
+  apply_hb_cypher() %>%
   # do we pipe after functions?
 
 # call the function for selecing the relevant year for each board
-apply_hb_year(HB = 'F', ey = 102)
-apply_hb_year(HB = 'L', ey = 102)
-apply_hb_year(HB = 'S', ey = 102)
-apply_hb_year(HB = 'T', ey = 203)
-apply_hb_year(HB = 'W', ey = 304)
-apply_hb_year(HB = 'Y', ey = 405)
-apply_hb_year(HB = 'V', ey = 506)
-apply_hb_year(HB = 'G', ey = 607)
-apply_hb_year(HB = 'A', ey = 708)
-apply_hb_year(HB = 'H', ey = 809)
-apply_hb_year(HB = 'Z', ey = 809)
-apply_hb_year(HB = 'N', ey = 910)
-apply_hb_year(HB = 'R', ey = 1011)
+apply_hb_year(bmi_basefile, HB = 'F', ey = 102)
+apply_hb_year(bmi_basefile, HB = 'L', ey = 102)
+apply_hb_year(bmi_basefile, HB = 'S', ey = 102)
+apply_hb_year(bmi_basefile, HB = 'T', ey = 203)
+apply_hb_year(bmi_basefile, HB = 'W', ey = 304)
+apply_hb_year(bmi_basefile, HB = 'Y', ey = 405)
+apply_hb_year(bmi_basefile, HB = 'V', ey = 506)
+apply_hb_year(bmi_basefile, HB = 'G', ey = 607)
+apply_hb_year(bmi_basefile, HB = 'A', ey = 708)
+apply_hb_year(bmi_basefile, HB = 'H', ey = 809)
+apply_hb_year(bmi_basefile, HB = 'Z', ey = 809)
+apply_hb_year(bmi_basefile, HB = 'N', ey = 910)
+apply_hb_year(bmi_basefile, HB = 'R', ey = 1011)
+
 
 # create totals for individual hb and all 
 # participating boards (for hb_pop_estimates)
 # Board level
 hb_pop_estimates <- rbind(hb_pop_estimates %>% 
                             group_by(HB2018, schlyr_exam)%>%
-                            summarise(pop),
+                            summarise(pop = sum(pop)) %>% ungroup,
 # Scotland level (all participating boards)
                           hb_pop_estimates %>% group_by(schlyr_exam) %>%
-                            summarise(pop) %>%
-                            mutate(HB2018 = "Total"))
+                            summarise(pop = sum(pop)) %>%
+                            mutate(HB2018 = "Total") %>% ungroup)
 
 
 # create totals for individual hb and all participating boards (for hb_data)
