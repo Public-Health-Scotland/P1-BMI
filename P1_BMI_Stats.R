@@ -624,7 +624,7 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2018 ~ "1819")) %>% 
   # do we need to pipe to functions?
   # call the function for creating HB cypher
-  apply_hb_cypher() %>%
+  apply_hb_cypher()
   # do we pipe after functions?
 
 # call the function for selecing the relevant year for each board
@@ -647,12 +647,12 @@ apply_hb_year(bmi_basefile, HB = 'R', ey = 1011)
 # participating boards (for hb_pop_estimates)
 # Board level
 hb_pop_estimates <- rbind(hb_pop_estimates %>% 
-                            group_by(HB2018, schlyr_exam)%>%
+                            group_by(HB2019, schlyr_exam)%>%
                             summarise(pop = sum(pop)) %>% ungroup,
 # Scotland level (all participating boards)
                           hb_pop_estimates %>% group_by(schlyr_exam) %>%
                             summarise(pop = sum(pop)) %>%
-                            mutate(HB2018 = "Total") %>% ungroup)
+                            mutate(HB2019 = "Total") %>% ungroup)
 
 
 # create totals for individual hb and all participating boards (for hb_data)
@@ -676,7 +676,7 @@ hb_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
 
 # Match hb data to hb population estimates
 hb_data <- left_join(hb_data, hb_pop_estimates, 
-                     by = c(HB2018, schlyr_exam))
+                     by = c("HB2019", "schlyr_exam"))
 
 
 # Confidence intervals (hb)
