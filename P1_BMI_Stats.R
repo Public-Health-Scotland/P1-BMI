@@ -677,10 +677,7 @@ hb_data <- left_join(hb_data, hb_pop_estimates,
 
 # Confidence intervals (hb)
 # use the function to calculate confidence intervals
-
-
-
-
+calculate_ci(hb_data)
 
 
 
@@ -739,10 +736,7 @@ ca_data <- left_join(ca_data, ca_pop_estimates,
 
 # Confidence intervals (ca)
 # use the function to calculate confidence intervals
-
-
-
-
+calculate_ci(ca_data)
 
 
 
@@ -822,9 +816,114 @@ gender_data <- left_join(gender_data, gender_pop_estimates,
 
 # Confidence intervals (gender)
 # use the function to calculate confidence intervals
+calculate_ci(gender_data)
 
 
 
+
+### simd analysis
+
+# create population file from the GRO mid year population estimates
+# of five year olds by simd (for years 01/02 to 13/14)
+simd_pop_estimates_1 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/DataZone2001_pop_est_2001_2014.rds")) %>%
+  select(Year, Datazone2001, Sex, AGE5, simd2004_sc_quintile, 
+         simd2006_sc_quintile, simd2009v2_sc_quintile, simd2012_sc_quintile)
+
+simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
+  rename(year = Year, pop = AGE5, sex = Sex) %>%
+  filter(year >= 2001 & year <=2013) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314"))
+
+# Recode simd 2004 & 2006 so all go from 1=most to 5=least
+
+
+
+# assign the appropriate SIMD value to a record depending on the year
+simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
+  mutate(simd = case_when(
+    schlyr_exam %in% c("1011", "1112", "1213", "1314") 
+    ~ simd2012_sc_quintile,
+    schlyr_exam %in% c("0708", "0809", "0910") 
+    ~ simd2009v2_sc_quintile,
+    schlyr_exam %in% c("0405", "0607", "1213") 
+    ~ simd2006_sc_quintile,
+    schlyr_exam %in% c("0102", "0203", "0304") 
+    ~ simd2004_sc_quintile
+  ))
+
+# create totals for simd_population_estimates_1
+# all participating boards
+simd_pop_estimates_1 <- rbind(simd_pop_estimates_1 %>% 
+                                group_by(simd, schlyr_exam)%>%
+                                summarise(pop = sum(pop)) %>% ungroup)
+
+
+# create population file from the GRO mid year population estimates
+# of five year olds by simd (for years 14/15 to current year)
+simd_pop_estimates_2 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/DataZone2011_pop_est_2011_2018.rds")) %>%
+  select(Year, Datazone2011, Sex, AGE5, simd2004_sc_quintile, 
+         simd2006_sc_quintile, simd2009v2_sc_quintile, simd2012_sc_quintile)
+
+simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
+  rename(year = Year, pop = AGE5, sex = Sex) %>%
+  filter(year >= 2014 & year <=2018) %>% 
+  mutate(schlyr_exam = case_when(year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718",
+                                 year == 2018 ~ "1819"))
+
+# assign the appropriate SIMD value to a record depending on the year
+simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
+  mutate(simd = case_when(
+    schlyr_exam %in% c("1415", "1516", "1617", "1718", "1819") 
+    ~ simd2016_sc_quintile
+  ))
+
+# create totals for simd_population_estimates_2
+# all participating boards
+simd_pop_estimates_2 <- rbind(simd_pop_estimates_2 %>% 
+                                group_by(simd, schlyr_exam)%>%
+                                summarise(pop = sum(pop)) %>% ungroup)
+
+
+# Match the two simd populations files together
+simd_population_estimates <- left_join(simd_pop_estimates_1, simd_pop_estimates_2, 
+                         by = c(simd, schlyr_exam))
+
+
+
+# create totals for simd (for simd_data)
+# all participating boards
+simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
+                     summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup,
+# totals by year (all participating boards)
+                   bmi_basefile %>% group_by(schlyr_exam) %>% 
+                     summarise_at(vars(tot:clin_cent_grp7), sum) %>%
+                     mutate(simd = "Total") %>% ungroup)
+
+# add simd_data to simd_population_estimates
+simd_data <- left_join(simd_data, simd_pop_estimates, 
+                       by = c(simd, schlyr_exam))
+
+
+# Confidence intervals (simd)
+# use the function to calculate confidence intervals
+calculate_ci(simd_data)
 
 
 
