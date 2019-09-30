@@ -624,19 +624,19 @@ hb_pop_estimates <- hb_pop_estimates %>%
 # call the function for creating HB cypher
 apply_hb_cypher(hb_pop_estimates) %>%
 # call the function for selecing the relevant year for each board
-apply_hb_year(bmi_basefile, HB = 'F', ey = 102)
-apply_hb_year(bmi_basefile, HB = 'L', ey = 102)
-apply_hb_year(bmi_basefile, HB = 'S', ey = 102)
-apply_hb_year(bmi_basefile, HB = 'T', ey = 203)
-apply_hb_year(bmi_basefile, HB = 'W', ey = 304)
-apply_hb_year(bmi_basefile, HB = 'Y', ey = 405)
-apply_hb_year(bmi_basefile, HB = 'V', ey = 506)
-apply_hb_year(bmi_basefile, HB = 'G', ey = 607)
-apply_hb_year(bmi_basefile, HB = 'A', ey = 708)
-apply_hb_year(bmi_basefile, HB = 'H', ey = 809)
-apply_hb_year(bmi_basefile, HB = 'Z', ey = 809)
-apply_hb_year(bmi_basefile, HB = 'N', ey = 910)
-apply_hb_year(bmi_basefile, HB = 'R', ey = 1011)
+apply_hb_year(hb_pop_estimates, HB = 'F', ey = 102)
+apply_hb_year(hb_pop_estimates, HB = 'L', ey = 102)
+apply_hb_year(hb_pop_estimates, HB = 'S', ey = 102)
+apply_hb_year(hb_pop_estimates, HB = 'T', ey = 203)
+apply_hb_year(hb_pop_estimates, HB = 'W', ey = 304)
+apply_hb_year(hb_pop_estimates, HB = 'Y', ey = 405)
+apply_hb_year(hb_pop_estimates, HB = 'V', ey = 506)
+apply_hb_year(hb_pop_estimates, HB = 'G', ey = 607)
+apply_hb_year(hb_pop_estimates, HB = 'A', ey = 708)
+apply_hb_year(hb_pop_estimates, HB = 'H', ey = 809)
+apply_hb_year(hb_pop_estimates, HB = 'Z', ey = 809)
+apply_hb_year(hb_pop_estimates, HB = 'N', ey = 910)
+apply_hb_year(hb_pop_estimates, HB = 'R', ey = 1011)
 
 
 # create totals for individual hb and all 
@@ -751,21 +751,72 @@ ca_data <- left_join(ca_data, ca_pop_estimates,
 
 # create population file from the GRO mid year population estimates
 # of five year olds by gender.
-gender_pop_estimates <- 
+gender_pop_estimates <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop, sex = Sex)
+
+gender_pop_estimates <- hb_pop_estimates %>% 
+  filter(age == 5) %>%
+  filter(year >= 2000 & year <=2018) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314",
+                                 year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718",
+                                 year == 2018 ~ "1819")) %>% 
+# call the function for creating HB cypher
+apply_hb_cypher(gender_pop_estimates) %>%
+# call the function for selecing the relevant year for each board
+apply_hb_year(gender_pop_estimates, HB = 'F', ey = 102)
+apply_hb_year(gender_pop_estimates, HB = 'L', ey = 102)
+apply_hb_year(gender_pop_estimates, HB = 'S', ey = 102)
+apply_hb_year(gender_pop_estimates, HB = 'T', ey = 203)
+apply_hb_year(gender_pop_estimates, HB = 'W', ey = 304)
+apply_hb_year(gender_pop_estimates, HB = 'Y', ey = 405)
+apply_hb_year(gender_pop_estimates, HB = 'V', ey = 506)
+apply_hb_year(gender_pop_estimates, HB = 'G', ey = 607)
+apply_hb_year(gender_pop_estimates, HB = 'A', ey = 708)
+apply_hb_year(gender_pop_estimates, HB = 'H', ey = 809)
+apply_hb_year(gender_pop_estimates, HB = 'Z', ey = 809)
+apply_hb_year(gender_pop_estimates, HB = 'N', ey = 910)
+apply_hb_year(gender_pop_estimates, HB = 'R', ey = 1011)
 
 
+# create totals for male and female (for gender_pop_estimates)
+# all participating boards
+gender_pop_estimates <- rbind(gender_pop_estimates %>% 
+                            group_by(sex, schlyr_exam)%>%
+                            summarise(pop = sum(pop)) %>% ungroup,
+# totals by year (all participating boards)
+                          gender_pop_estimates %>% group_by(schlyr_exam) %>%
+                            summarise(pop = sum(pop)) %>%
+                            mutate(sex = "Total") %>% ungroup)
 
-# create totals for individual hb and all participating boards 
-# by gender
+
+# create totals for male and female (for gender_data)
+# all participating boards
 gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
-                   summarise_at(vars(tot:clin_cent_grp7), sum),
-                 # Scotland level (all participating boards)
-                 bmi_basefile %>% group_by(schlyr_exam) %>% 
+                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup,
+# totals by year (all participating boards)
+                   bmi_basefile %>% group_by(schlyr_exam) %>% 
                    summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                   mutate(HB2018 = "Total")) %>% ungroup()
+                   mutate(sex = "Total") %>% ungroup)
 
-# Match hb data to hb population estimates
-gender_data <- left_join(gender_data, hb_pop_estimates, 
+
+# Match gender data to gender population estimates
+gender_data <- left_join(gender_data, gender_pop_estimates, 
                      by = c(sex, schlyr_exam))
 
 
