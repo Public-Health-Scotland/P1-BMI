@@ -594,7 +594,6 @@ bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
 
 ### Health board analysis
 
-# SQ
 # create population file from the GRO mid year population estimates
 # of five year olds in each HB and for all participating boards
 hb_pop_estimates <- readRDS(paste0(
@@ -622,11 +621,8 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718",
                                  year == 2018 ~ "1819")) %>% 
-  # do we need to pipe to functions?
-  # call the function for creating HB cypher
-  apply_hb_cypher()
-  # do we pipe after functions?
-
+# call the function for creating HB cypher
+apply_hb_cypher(hb_pop_estimates) %>%
 # call the function for selecing the relevant year for each board
 apply_hb_year(bmi_basefile, HB = 'F', ey = 102)
 apply_hb_year(bmi_basefile, HB = 'L', ey = 102)
@@ -693,13 +689,44 @@ hb_data <- left_join(hb_data, hb_pop_estimates,
 
 # create population file from the GRO mid year population estimates
 # of five year olds in each ca 
-ca_pop_estimates <- 
+ca_pop_estimates <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/CA2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop)
+
+ca_pop_estimates <- ca_pop_estimates %>% 
+  filter(age == 5) %>%
+  filter(year >= 2000 & year <=2018) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314",
+                                 year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718",
+                                 year == 2018 ~ "1819")) 
+
+# create totals for individual council areas (for ca_pop_estimates)
+# council area level
+ca_pop_estimates <- rbind(ca_pop_estimates %>% 
+                            group_by(CA2019, schlyr_exam)%>%
+                            summarise(pop = sum(pop)) %>% ungroup)
 
 
+# create totals for individual hb and all participating boards (for ca_data)
+# council area level
+ca_data <- rbind(bmi_basefile %>% group_by(CA2019, schlyr_exam) %>%
+                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup)
 
-# create totals for individual council areas
-ca_data <- rbind(bmi_basefile %>% group_by(carea, schlyr_exam) %>%
-                     summarise_at(vars(tot:clin_cent_grp7), sum))
 
 # Select council areas with a valid population. Some council areas 
 # may have small numbers for years that they did not participate.
@@ -707,7 +734,7 @@ ca_data <- subset(ca_data, tot >50)
 
 # Match ca data to ca population estimates
 ca_data <- left_join(ca_data, ca_pop_estimates, 
-                     by = c(carea, schlyr_exam))
+                     by = c(CA2019, schlyr_exam))
 
 
 # Confidence intervals (ca)
