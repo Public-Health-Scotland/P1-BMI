@@ -509,7 +509,7 @@ bmi_data <- bmi_data %>%
     ~ simd2012_sc_quintile,
     schlyr_exam %in% c("0708", "0809", "0910") 
     ~ simd2009v2_sc_quintile,
-    schlyr_exam %in% c("0405", "0607", "1213") 
+    schlyr_exam %in% c("0405", "0506", "0607") 
     ~ simd2006_sc_quintile,
     schlyr_exam %in% c("0102", "0203", "0304") 
     ~ simd2004_sc_quintile
@@ -620,23 +620,24 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819")) %>% 
+                                 year == 2018 ~ "1819")) #%>% 
 # call the function for creating HB cypher
-apply_hb_cypher(hb_pop_estimates) %>%
+# apply_hb_cypher(hb_pop_estimates) # %>%
+##### commented out until we have the functions script working #####
 # call the function for selecing the relevant year for each board
-apply_hb_year(hb_pop_estimates, HB = 'F', ey = 102)
-apply_hb_year(hb_pop_estimates, HB = 'L', ey = 102)
-apply_hb_year(hb_pop_estimates, HB = 'S', ey = 102)
-apply_hb_year(hb_pop_estimates, HB = 'T', ey = 203)
-apply_hb_year(hb_pop_estimates, HB = 'W', ey = 304)
-apply_hb_year(hb_pop_estimates, HB = 'Y', ey = 405)
-apply_hb_year(hb_pop_estimates, HB = 'V', ey = 506)
-apply_hb_year(hb_pop_estimates, HB = 'G', ey = 607)
-apply_hb_year(hb_pop_estimates, HB = 'A', ey = 708)
-apply_hb_year(hb_pop_estimates, HB = 'H', ey = 809)
-apply_hb_year(hb_pop_estimates, HB = 'Z', ey = 809)
-apply_hb_year(hb_pop_estimates, HB = 'N', ey = 910)
-apply_hb_year(hb_pop_estimates, HB = 'R', ey = 1011)
+# apply_hb_year(hb_pop_estimates, HB = 'F', ey = 102)
+# apply_hb_year(hb_pop_estimates, HB = 'L', ey = 102)
+# apply_hb_year(hb_pop_estimates, HB = 'S', ey = 102)
+# apply_hb_year(hb_pop_estimates, HB = 'T', ey = 203)
+# apply_hb_year(hb_pop_estimates, HB = 'W', ey = 304)
+# apply_hb_year(hb_pop_estimates, HB = 'Y', ey = 405)
+# apply_hb_year(hb_pop_estimates, HB = 'V', ey = 506)
+# apply_hb_year(hb_pop_estimates, HB = 'G', ey = 607)
+# apply_hb_year(hb_pop_estimates, HB = 'A', ey = 708)
+# apply_hb_year(hb_pop_estimates, HB = 'H', ey = 809)
+# apply_hb_year(hb_pop_estimates, HB = 'Z', ey = 809)
+# apply_hb_year(hb_pop_estimates, HB = 'N', ey = 910)
+# apply_hb_year(hb_pop_estimates, HB = 'R', ey = 1011)
 
 
 # create totals for individual hb and all 
@@ -731,7 +732,7 @@ ca_data <- subset(ca_data, tot >50)
 
 # Match ca data to ca population estimates
 ca_data <- left_join(ca_data, ca_pop_estimates, 
-                     by = c(CA2019, schlyr_exam))
+                     by = c("CA2019", "schlyr_exam"))
 
 
 # Confidence intervals (ca)
@@ -749,7 +750,7 @@ gender_pop_estimates <- readRDS(paste0(
   lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop, sex = Sex)
 
-gender_pop_estimates <- hb_pop_estimates %>% 
+gender_pop_estimates <- gender_pop_estimates %>% 
   filter(age == 5) %>%
   filter(year >= 2000 & year <=2018) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
@@ -769,23 +770,23 @@ gender_pop_estimates <- hb_pop_estimates %>%
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819")) %>% 
+                                 year == 2018 ~ "1819")) # %>% 
 # call the function for creating HB cypher
-apply_hb_cypher(gender_pop_estimates) %>%
+# apply_hb_cypher(gender_pop_estimates) %>%
 # call the function for selecing the relevant year for each board
-apply_hb_year(gender_pop_estimates, HB = 'F', ey = 102)
-apply_hb_year(gender_pop_estimates, HB = 'L', ey = 102)
-apply_hb_year(gender_pop_estimates, HB = 'S', ey = 102)
-apply_hb_year(gender_pop_estimates, HB = 'T', ey = 203)
-apply_hb_year(gender_pop_estimates, HB = 'W', ey = 304)
-apply_hb_year(gender_pop_estimates, HB = 'Y', ey = 405)
-apply_hb_year(gender_pop_estimates, HB = 'V', ey = 506)
-apply_hb_year(gender_pop_estimates, HB = 'G', ey = 607)
-apply_hb_year(gender_pop_estimates, HB = 'A', ey = 708)
-apply_hb_year(gender_pop_estimates, HB = 'H', ey = 809)
-apply_hb_year(gender_pop_estimates, HB = 'Z', ey = 809)
-apply_hb_year(gender_pop_estimates, HB = 'N', ey = 910)
-apply_hb_year(gender_pop_estimates, HB = 'R', ey = 1011)
+# apply_hb_year(gender_pop_estimates, HB = 'F', ey = 102)
+# apply_hb_year(gender_pop_estimates, HB = 'L', ey = 102)
+# apply_hb_year(gender_pop_estimates, HB = 'S', ey = 102)
+# apply_hb_year(gender_pop_estimates, HB = 'T', ey = 203)
+# apply_hb_year(gender_pop_estimates, HB = 'W', ey = 304)
+# apply_hb_year(gender_pop_estimates, HB = 'Y', ey = 405)
+# apply_hb_year(gender_pop_estimates, HB = 'V', ey = 506)
+# apply_hb_year(gender_pop_estimates, HB = 'G', ey = 607)
+# apply_hb_year(gender_pop_estimates, HB = 'A', ey = 708)
+# apply_hb_year(gender_pop_estimates, HB = 'H', ey = 809)
+# apply_hb_year(gender_pop_estimates, HB = 'Z', ey = 809)
+# apply_hb_year(gender_pop_estimates, HB = 'N', ey = 910)
+# apply_hb_year(gender_pop_estimates, HB = 'R', ey = 1011)
 
 
 # create totals for male and female (for gender_pop_estimates)
@@ -811,7 +812,7 @@ gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
 
 # Match gender data to gender population estimates
 gender_data <- left_join(gender_data, gender_pop_estimates, 
-                     by = c(sex, schlyr_exam))
+                     by = c("sex", "schlyr_exam"))
 
 
 # Confidence intervals (gender)
@@ -827,11 +828,11 @@ calculate_ci(gender_data)
 # of five year olds by simd (for years 01/02 to 13/14)
 simd_pop_estimates_1 <- readRDS(paste0(
   lookupFolder, "/Unicode/Populations/Estimates/DataZone2001_pop_est_2001_2014.rds")) %>%
-  select(Year, Datazone2001, Sex, AGE5, simd2004_sc_quintile, 
+  select(Year, DataZone2001, SEX, AGE5, simd2004_sc_quintile, 
          simd2006_sc_quintile, simd2009v2_sc_quintile, simd2012_sc_quintile)
 
 simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
-  rename(year = Year, pop = AGE5, sex = Sex) %>%
+  rename(year = Year, pop = AGE5, sex = SEX) %>%
   filter(year >= 2001 & year <=2013) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
@@ -858,7 +859,7 @@ simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
     ~ simd2012_sc_quintile,
     schlyr_exam %in% c("0708", "0809", "0910") 
     ~ simd2009v2_sc_quintile,
-    schlyr_exam %in% c("0405", "0607", "1213") 
+    schlyr_exam %in% c("0405", "0506", "0607") 
     ~ simd2006_sc_quintile,
     schlyr_exam %in% c("0102", "0203", "0304") 
     ~ simd2004_sc_quintile
@@ -875,11 +876,10 @@ simd_pop_estimates_1 <- rbind(simd_pop_estimates_1 %>%
 # of five year olds by simd (for years 14/15 to current year)
 simd_pop_estimates_2 <- readRDS(paste0(
   lookupFolder, "/Unicode/Populations/Estimates/DataZone2011_pop_est_2011_2018.rds")) %>%
-  select(Year, Datazone2011, Sex, AGE5, simd2004_sc_quintile, 
-         simd2006_sc_quintile, simd2009v2_sc_quintile, simd2012_sc_quintile)
+  select(year, datazone2011, sex, age5, simd2016_sc_quintile)
 
 simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
-  rename(year = Year, pop = AGE5, sex = Sex) %>%
+  rename(pop = age5) %>%
   filter(year >= 2014 & year <=2018) %>% 
   mutate(schlyr_exam = case_when(year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
@@ -902,23 +902,19 @@ simd_pop_estimates_2 <- rbind(simd_pop_estimates_2 %>%
 
 
 # Match the two simd populations files together
-simd_population_estimates <- left_join(simd_pop_estimates_1, simd_pop_estimates_2, 
-                         by = c(simd, schlyr_exam))
+simd_pop_estimates <- left_join(simd_pop_estimates_1, simd_pop_estimates_2,
+                         by = c("simd" , "schlyr_exam"))
 
 
 
-# create totals for simd (for simd_data)
+# create totals for simd (simd_data)
 # all participating boards
 simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
-                     summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup,
-# totals by year (all participating boards)
-                   bmi_basefile %>% group_by(schlyr_exam) %>% 
-                     summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                     mutate(simd = "Total") %>% ungroup)
+                     summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup)
 
 # add simd_data to simd_population_estimates
 simd_data <- left_join(simd_data, simd_pop_estimates, 
-                       by = c(simd, schlyr_exam))
+                       by = c("simd", "schlyr_exam"))
 
 
 # Confidence intervals (simd)
