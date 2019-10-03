@@ -70,28 +70,28 @@ bmi_data <- bmi_data %>%
 
 # Restrict to review number 60/61 (var: rev_num)
 bmi_data <- bmi_data %>%
-  filter(rev_num == "60" | rev_num == "61")                                       #688520 obs.
+  filter(rev_num == "60" | rev_num == "61")                                       #688,520 obs.
+
+# Extract blank height/weight valued records
+blankData <- bmi_data %>%
+  filter(is.na(height) | height == "0000" | is.na(weight) | weight == "00000")     #(13,266 obs.)
+
+# Remove blank height/weight
+bmi_data <- bmi_data %>%
+  filter((!is.na(height) & height != "0000") & (!is.na(weight) & weight != "00000"))   #675,254 obs.
+
 
 # Define single date variable
 bmi_data$daterec <- if_else(bmi_data$date_hw != "00000000", bmi_data$date_hw, bmi_data$date_exam)
 
-# Select only most recent record per CHI and review (var: rev_num)
-bmi_data <- bmi_data %>%
-  group_by(chi, rev_num) %>%
-  slice(which.max(as.Date(daterec, '%Y%m%d')))                                    #667964 obs.
-
-# Extract blank height/weight valued records
-blankData <- bmi_data %>%
-  filter(is.na(height) | height == "0000" | is.na(weight) | weight == "0000")     #(12048 obs.)
-
-# Remove blank height/weight
-bmi_data <- bmi_data %>%
-  filter(!is.na(height) & height != "0000" & !is.na(weight) & weight != "0000")   #655916 obs.
 
 # Select single record per CHI (only using review 61 where there's no review 60 - var:rev_num)
 bmi_data <- bmi_data %>%
+  arrange(chi, daterec) %>% 
   group_by(chi) %>%
-  slice(which.min(as.numeric(rev_num)))                                           #653587 obs.
+  mutate(rec_num = row_number()) %>% 
+  filter(rec_num == min(rec_num)) %>% 
+  select(-rec_num)                                                               #652,916 obs.
 
 
 ### 3 - Match Postcodes ----
