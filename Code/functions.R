@@ -41,23 +41,29 @@ calculate_ci <- function(df) {
            n_clin_sobe = clin_cent_grp5,
            n_clin_overwplus = clin_cent_grp6,
            n_clin_obeplus = clin_cent_grp7)
-  df <- df %>%
-    (for (weight_group_epi in  c("undw", "hw", "over", "obe", "overobe")) {
-      #p_undw <- paste("p_", weight_group_epi)
-      #      assign(p_undw, df$cent_grp1)
-      mutate(assign(paste("p_", weight_group_epi), get(paste("n_", weight_group_epi, sep=""))/tot),
-             assign(paste("q_", weight_group, sep = "")), 1 - (paste("p_", weight_group_epi, sep="")),
-             assign(paste(weight_group_epi, "_bmi",sep = "")), (paste(weight_group_epi, "_n", sep="")/tot),
-             assign(paste(weight_group_epi, "_lci",sep = "")), (paste("p_", weight_group_epi, sep="") - 1.96 * sqrt(((paste("p_", weight_group_epi) * paste("q_", weight_group_epi))/tot) * (pcf))),
-             assign(paste(weight_group_epi, "_uci",sep = "")), (paste("p_", weight_group_epi, sep="") + 1.96 * sqrt(((paste("p_", weight_group_epi) * paste("q_", weight_group_epi))/tot) * (pcf))))
-    }) %>%
-    (for (weight_group_clin in  c("undw", "hw", "over", "obe", "sobe", "overwplus", "obeplus")) {
-      mutate(assign(paste("p_", weight_group_clin), get(paste("n_", weight_group_clin, sep=""))/tot),
-             assign(paste("q_", weight_group_clin, sep = "")), 1 - (paste("p_", weight_group_clin, sep="")),
-             assign(paste(weight_group_clin, "_bmi",sep = "")), (paste(weight_group_clin, sep="", "_n")/tot),
-             assign(paste(weight_group_clin, "_lci",sep = "")), (paste("p_", weight_group_clin, sep="") - 1.96 * sqrt(((paste("p_", weight_group_clin) * paste("q_", weight_group_clin))/tot) * (pcf))),
-             assign(paste(weight_group_clin, "_uci",sep = "")), (paste("p_", weight_group_clin, sep="") + 1.96 * sqrt(((paste("p_", weight_group_clin) * paste("q_", weight_group_clin))/tot) * (pcf))))
-    })
+
+  for (weight_group_epi in c("undw", "hw", "over", "obe", "overobe")) {
+    df <-
+      df %>% mutate(
+        !!paste0("p_", weight_group_epi) := get(paste0("n_", weight_group_epi)) /
+          tot,
+        !!paste0("q_", weight_group_epi) := (1 - get(paste0(
+          "p_", weight_group_epi
+        ))),
+        !!paste0(weight_group_epi, "_bmi") := get(paste0("n_", weight_group_epi)) /
+          tot,
+        !!paste0(weight_group_epi, "_lci") := (get(paste0(
+          "p_", weight_group_epi
+        )) - 1.96 * sqrt(((
+          get(paste0("p_", weight_group_epi)) * get(paste0("q_", weight_group_epi))
+        ) / tot) * (pcf))),
+        !!paste0(weight_group_epi, "_uci") := (get(paste0(
+          "p_", weight_group_epi
+        )) + 1.96 * sqrt(((
+          get(paste0("p_", weight_group_epi)) * get(paste0("q_", weight_group_epi))
+        ) / tot) * (pcf)))
+      )
+  }
   return(df)
 }
 

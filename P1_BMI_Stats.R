@@ -628,19 +628,19 @@ hb_pop_estimates <- hb_pop_estimates %>%
   # do we pipe after functions?
 
 # call the function for selecing the relevant year for each board
-apply_hb_year(bmi_basefile, HB = 'F', ey = 102)
-apply_hb_year(bmi_basefile, HB = 'L', ey = 102)
-apply_hb_year(bmi_basefile, HB = 'S', ey = 102)
-apply_hb_year(bmi_basefile, HB = 'T', ey = 203)
-apply_hb_year(bmi_basefile, HB = 'W', ey = 304)
-apply_hb_year(bmi_basefile, HB = 'Y', ey = 405)
-apply_hb_year(bmi_basefile, HB = 'V', ey = 506)
-apply_hb_year(bmi_basefile, HB = 'G', ey = 607)
-apply_hb_year(bmi_basefile, HB = 'A', ey = 708)
-apply_hb_year(bmi_basefile, HB = 'H', ey = 809)
-apply_hb_year(bmi_basefile, HB = 'Z', ey = 809)
-apply_hb_year(bmi_basefile, HB = 'N', ey = 910)
-apply_hb_year(bmi_basefile, HB = 'R', ey = 1011)
+apply_hb_year(hb_pop_estimates, HB = 'F', ey = 102)
+apply_hb_year(hb_pop_estimates, HB = 'L', ey = 102)
+apply_hb_year(hb_pop_estimates, HB = 'S', ey = 102)
+apply_hb_year(hb_pop_estimates, HB = 'T', ey = 203)
+apply_hb_year(hb_pop_estimates, HB = 'W', ey = 304)
+apply_hb_year(hb_pop_estimates, HB = 'Y', ey = 405)
+apply_hb_year(hb_pop_estimates, HB = 'V', ey = 506)
+apply_hb_year(hb_pop_estimates, HB = 'G', ey = 607)
+apply_hb_year(hb_pop_estimates, HB = 'A', ey = 708)
+apply_hb_year(hb_pop_estimates, HB = 'H', ey = 809)
+apply_hb_year(hb_pop_estimates, HB = 'Z', ey = 809)
+apply_hb_year(hb_pop_estimates, HB = 'N', ey = 910)
+apply_hb_year(hb_pop_estimates, HB = 'R', ey = 1011)
 
 
 # create totals for individual hb and all 
@@ -681,8 +681,7 @@ hb_data <- left_join(hb_data, hb_pop_estimates,
 
 # Confidence intervals (hb)
 # use the function to calculate confidence intervals
-
-
+hb_data <- calculate_ci(hb_data)
 
 
 
