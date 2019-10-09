@@ -74,7 +74,7 @@ bmi_data <- bmi_data %>%
 
 # Extract blank height/weight valued records
 blankData <- bmi_data %>%
-  filter(is.na(height) | height == "0000" | is.na(weight) | weight == "00000")     #(13,266 obs.)
+  filter(is.na(height) | height == "0000" | is.na(weight) | weight == "00000")     #13,266 obs.
 
 # Remove blank height/weight
 bmi_data <- bmi_data %>%
@@ -178,12 +178,19 @@ bmi_data$HB2018 <- bmi_data$HB2018 %>%
 # Exclude West Lothian for 2007/08 unless school attendance is outwith West Lothian
 bmi_data <- bmi_data %>%
   subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))
+# 650,955 obs.
+
+# Extract west lothian excluded data
+blankDataWestLothian <- bmi_data %>%
+  subset(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))
+#(1,501 obs.)
 
 # Exclude Kircaldy schools during 2008/09
 kircaldy <- c('F735L','F736L','F737L','F738L','F739L','F740L','F741L',
               'F743L','F744L','F745L','F746L','F747L','F749L','F882L','F884L')
 bmi_data <- bmi_data %>%
   subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))
+#650,756 obs.
 
 # Remove variable Kircaldy
 rm(kircaldy)
@@ -217,6 +224,7 @@ apply_hb_year <- function(x = bmi_data, HB, ey, cy = currentYr) {
 
 
 # code below should work
+bmi_data <- bmi_data %>%
 apply_hb_year(HB = 'F', ey = 102)
 apply_hb_year(HB = 'L', ey = 102)
 apply_hb_year(HB = 'S', ey = 102)
@@ -229,7 +237,7 @@ apply_hb_year(HB = 'A', ey = 708)
 apply_hb_year(HB = 'H', ey = 809)
 apply_hb_year(HB = 'Z', ey = 809)
 apply_hb_year(HB = 'N', ey = 910)
-apply_hb_year(HB = 'R', ey = 1011)  #650,814 obs.
+apply_hb_year(HB = 'R', ey = 1011)  #650,158 obs.
 
 
 ### 5 - Child Data Sort/Analysis ----
