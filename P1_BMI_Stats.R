@@ -176,7 +176,7 @@ bmi_data$HB2018 <- bmi_data$HB2018 %>%
 
 ## Exclude cases
 # Exclude West Lothian for 2007/08 unless school attendance is outwith West Lothian
-bmi_data_1 <- bmi_data %>%
+bmi_data <- bmi_data %>%
   subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 650,955 obs.
 
 # Extract west lothian excluded data
@@ -210,7 +210,7 @@ apply_hb_year <- function(x, HB, ey, cy) {
 
 
 # code below should work
-test <- bmi_data %>%
+bmi_data <- bmi_data %>%
   apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
   apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
   apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
