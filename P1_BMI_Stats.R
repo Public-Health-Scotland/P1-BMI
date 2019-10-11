@@ -585,15 +585,11 @@ bmi_data <- mutate(bmi_data, ca_name = case_when(
 bmi_data <- mutate(bmi_data, carea = paste(substr(CA2019, 8, 9),ca_name))
 
 
-arrange(bmi_data, chi)
-
-
 bmi_basefile <- bmi_data %>%
   subset(select = c(chi, id, HB2019, CA2019, carea, sex, height, weight, daterec, 
                     schlyr_exam, schlgivn, rev_num, agemth, nyob, mob, dob, pc7,
-                    simd2016_sc_quintile, simd2012_sc_quintile, 
-                    simd2009v2_sc_quintile, simd2006_sc_quintile, 
-                    simd2004_sc_quintile, simd, sex, height_m, weight_kg, bmi, 
+                    simd_2016, simd_2012, simd_2009, simd_2006, 
+                    simd_2004, simd, sex, height_m, weight_kg, bmi, 
                     tot, cent_grp1, cent_grp2, cent_grp3, cent_grp4, cent_grp5, 
                     clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, 
                     clin_cent_grp5, clin_cent_grp6, clin_cent_grp7))
@@ -601,7 +597,7 @@ bmi_basefile <- bmi_data %>%
 # This file contains data for school years 2001/02 to 2017/18 and should 
 # be used for information requests etc. so that any figures produced match 
 # those published in financial year 2017/18.
-saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))              #614,752 obs.
+saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))              #642,660 obs.
 
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
 
