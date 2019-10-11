@@ -87,11 +87,11 @@ bmi_data$daterec <- if_else(bmi_data$date_hw != "00000000", bmi_data$date_hw, bm
 
 # Select single record per CHI (only using review 61 where there's no review 60 - var:rev_num)
 bmi_data <- bmi_data %>%
-  arrange(chi, daterec) %>% 
+  arrange(chi, desc(daterec)) %>% 
   group_by(chi) %>%
   mutate(rec_num = row_number()) %>% 
   filter(rec_num == min(rec_num)) %>% 
-  select(-rec_num)                                                               #652,916 obs.
+  select(-rec_num)                                                               #661,576 obs.
 
 
 ### 3 - Match Postcodes ----
@@ -176,28 +176,28 @@ bmi_data$HB2018 <- bmi_data$HB2018 %>%
 
 # exclude records that have blank HB2018
 # blank_hb2019 <- bmi_data %>%
-#   subset(is.na(HB2018))
+#   subset(is.na(HB2018))                                                         #3,440 obs.
 
 # exclude records that have blank HB2018
 bmi_data <- bmi_data %>%
-  subset(!(is.na(HB2018)))
+  subset(!(is.na(HB2018)))                                                        #657,997 obs.
 
 
 # Extract west lothian excluded data
-blankDataWestLothian <- bmi_data %>%
-  subset(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #1,501 obs.
+blank_data_west_lothian <- bmi_data %>%
+  subset(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,222 obs.
 
 ## Exclude cases
 # Exclude West Lothian for 2007/08 unless school attendance is outwith West Lothian
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 647,975 obs.
+  subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,775 obs.
 
 
 # Exclude Kircaldy schools during 2008/09
 kircaldy <- c('F735L','F736L','F737L','F738L','F739L','F740L','F741L',
               'F743L','F744L','F745L','F746L','F747L','F749L','F882L','F884L')
 bmi_data <- bmi_data %>%
-  subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))                       #647,778 obs.
+  subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))                       #655,573 obs.
 
 # Remove variable Kircaldy
 rm(kircaldy)
@@ -205,7 +205,7 @@ gc()
 
 # Exclude schlyr 02/03 from Borders data
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'B' & schlyr_exam == '0203'))                                #647,483 obs.
+  subset(!(HB2018 == 'B' & schlyr_exam == '0203'))                                #655,203 obs.
 
 ## Select relevant years function
 apply_hb_year <- function(x, HB, ey, cy) {
@@ -233,7 +233,7 @@ bmi_data <- bmi_data %>%
   apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
   apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
   apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
-  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr)                              #643,254 obs.
+  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr)                              #650,899 obs.
 
 
 ### 5 - Child Data Sort/Analysis ----
@@ -273,7 +273,7 @@ lookup_relevant <- semi_join(fulldatadic, bmi_data %>% colnames(.) %>% tibble::e
 
 
 # Select children aged 4 years to under 8 years.
-bmi_data <- subset(bmi_data, agemth >=48 & agemth <96)                            #643,157 obs
+bmi_data <- subset(bmi_data, agemth >=48 & agemth <96)                            #650,685 obs
 
 
 ## Save out a file at this point that can be used to produce the total
