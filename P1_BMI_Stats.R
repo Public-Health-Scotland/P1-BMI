@@ -631,23 +631,26 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718",
                                  year == 2018 ~ "1819")) #%>% 
+# Exclude schlyr 02/03 from Borders data
+hb_pop_estimates <- hb_pop_estimates %>%
+  subset(!(HB2018 == 'B' & schlyr_exam == '0203')) %>%
 # call the function for creating HB cypher
-# apply_hb_cypher(hb_pop_estimates) # %>%
-##### commented out until we have the functions script working #####
+apply_hb_cypher(hb_pop_estimates) # %>%
 # call the function for selecing the relevant year for each board
-# apply_hb_year(hb_pop_estimates, HB = 'F', ey = 102)
-# apply_hb_year(hb_pop_estimates, HB = 'L', ey = 102)
-# apply_hb_year(hb_pop_estimates, HB = 'S', ey = 102)
-# apply_hb_year(hb_pop_estimates, HB = 'T', ey = 203)
-# apply_hb_year(hb_pop_estimates, HB = 'W', ey = 304)
-# apply_hb_year(hb_pop_estimates, HB = 'Y', ey = 405)
-# apply_hb_year(hb_pop_estimates, HB = 'V', ey = 506)
-# apply_hb_year(hb_pop_estimates, HB = 'G', ey = 607)
-# apply_hb_year(hb_pop_estimates, HB = 'A', ey = 708)
-# apply_hb_year(hb_pop_estimates, HB = 'H', ey = 809)
-# apply_hb_year(hb_pop_estimates, HB = 'Z', ey = 809)
-# apply_hb_year(hb_pop_estimates, HB = 'N', ey = 910)
-# apply_hb_year(hb_pop_estimates, HB = 'R', ey = 1011)
+  hb_pop_estimates <- hb_pop_estimates %>%
+  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr) 
 
 
 # create totals for individual hb and all 
@@ -781,23 +784,26 @@ gender_pop_estimates <- gender_pop_estimates %>%
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718",
                                  year == 2018 ~ "1819")) # %>% 
-# call the function for creating HB cypher
-# apply_hb_cypher(gender_pop_estimates) %>%
+# Exclude schlyr 02/03 from Borders data
+hb_pop_estimates <- hb_pop_estimates %>%
+  subset(!(HB2018 == 'B' & schlyr_exam == '0203')) %>%
+  # call the function for creating HB cypher
+  apply_hb_cypher(hb_pop_estimates) # %>%
 # call the function for selecing the relevant year for each board
-# apply_hb_year(gender_pop_estimates, HB = 'F', ey = 102)
-# apply_hb_year(gender_pop_estimates, HB = 'L', ey = 102)
-# apply_hb_year(gender_pop_estimates, HB = 'S', ey = 102)
-# apply_hb_year(gender_pop_estimates, HB = 'T', ey = 203)
-# apply_hb_year(gender_pop_estimates, HB = 'W', ey = 304)
-# apply_hb_year(gender_pop_estimates, HB = 'Y', ey = 405)
-# apply_hb_year(gender_pop_estimates, HB = 'V', ey = 506)
-# apply_hb_year(gender_pop_estimates, HB = 'G', ey = 607)
-# apply_hb_year(gender_pop_estimates, HB = 'A', ey = 708)
-# apply_hb_year(gender_pop_estimates, HB = 'H', ey = 809)
-# apply_hb_year(gender_pop_estimates, HB = 'Z', ey = 809)
-# apply_hb_year(gender_pop_estimates, HB = 'N', ey = 910)
-# apply_hb_year(gender_pop_estimates, HB = 'R', ey = 1011)
-
+hb_pop_estimates <- hb_pop_estimates %>%
+  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr) 
 
 # create totals for male and female (for gender_pop_estimates)
 # all participating boards
@@ -943,9 +949,24 @@ calculate_ci(simd_data)
 
 
 
-# board level completeness
-bmi_data_coverage <-
 
+
+
+
+# board level completeness
+bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
+
+# create totals for individual hb and all participating boards (for bmi_data_coverage)
+# create a variable for the total number of reviews
+bmi_coverage_data <- bmi_coverage_data %>% 
+  mutate(total_reviews = 1)
+# Board level
+hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
+                   summarise_at(total_reviews, sum)  %>% ungroup,
+                 # Scotland level (all participating boards)
+                 bmi_data_coverage %>% group_by(schlyr_exam) %>% 
+                   summarise_at(total_reviews, sum) %>%
+                   mutate(HB2019 = "Total") %>% ungroup)
 
 
 
