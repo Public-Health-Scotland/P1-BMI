@@ -86,12 +86,28 @@ bmi_data$daterec <- if_else(bmi_data$date_hw != "00000000", bmi_data$date_hw, bm
 
 
 # Select single record per CHI (only using review 61 where there's no review 60 - var:rev_num)
-bmi_data <- bmi_data %>%
+bmi_data_test <- bmi_data %>% 
   arrange(chi, desc(daterec)) %>% 
-  group_by(chi) %>%
-  mutate(rec_num = row_number()) %>% 
-  filter(rec_num == min(rec_num)) %>% 
-  select(-rec_num)                                                               #661,576 obs.
+  group_by(chi) %>% 
+  
+  # max_height = if there is a valid height somewhere for a chi number this should
+  # return a number greater than 0. Same for max_weight
+  mutate(max_height = max(as.numeric(height)),
+         max_weight = max(as.numeric(weight))) %>% 
+  ungroup() %>% 
+  
+  # flag = highlights records which DO NOT have a valid height OR valid weight
+  # BUT the chi number DOES have a valid height AND weight in another record
+  mutate(flag = case_when(
+           (is.na(height) | height == "0000") & 
+             (is.na(weight) | weight == "00000") &
+             (max_height > 0 & max_weight > 0) ~ 1,
+           TRUE ~ 0)) %>% 
+  filter(flag == 0) %>% 
+  group_by(chi) %>% 
+  mutate(rec_number = row_number()) %>% 
+  ungroup() %>% 
+  filter(rec_number == 1)                                                       # 661,576
 
 
 ### 3 - Match Postcodes ----
@@ -958,15 +974,37 @@ bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
 # create totals for individual hb and all participating boards (for bmi_data_coverage)
 # create a variable for the total number of reviews
-bmi_coverage_data <- bmi_coverage_data %>% 
-  mutate(total_reviews = 1)
-# Board level
+
+# May not be needed
+#bmi_coverage_data <- bmi_coverage_data %>% 
+#  mutate(total_reviews = 1)
+
+# board level
 hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
-                   summarise_at(total_reviews, sum)  %>% ungroup,
-                 # Scotland level (all participating boards)
+                   summarise_at(n(), sum)  %>% ungroup(),
+# Scotland level (all participating boards)
                  bmi_data_coverage %>% group_by(schlyr_exam) %>% 
-                   summarise_at(total_reviews, sum) %>%
-                   mutate(HB2019 = "Total") %>% ungroup)
+                   summarise_at(n(), sum) %>%
+                   mutate(HB2019 = "Total") %>% ungroup())
+
+
+# create a variable for the total number of reviews
+bmi_basefile <- bmi_basefile %>% 
+  mutate(total_reviews = 1) 
+# board level  
+hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
+                               summarise_at(n(), sum)  %>% ungroup(),
+# Scotland level (all participating boards)
+                             bmi_basefile %>% group_by(schlyr_exam) %>%
+                               summarise_at(n(), sum) %>%
+                               mutate(HB2019 = "Total") %>% ungroup())
+
+# Add all Health Board Files (population, all P1 reviews,
+# P1 reviews with valid h&w measurements)
+### is this the correct way to use bind_rows?
+hb_completeness_data <- bind_rows(hb_pop_estimates, hb_p1rev_data,
+                                  hb_valid_p1rev_data) %>% 
+  spread(HB2018, schlyr_exam)
 
 
 
