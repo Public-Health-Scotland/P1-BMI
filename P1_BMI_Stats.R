@@ -85,8 +85,10 @@ blank_height_weight <- bmi_data %>%
 bmi_data$daterec <- if_else(bmi_data$date_hw != "00000000", bmi_data$date_hw, bmi_data$date_exam)
 
 
-# Select single record per CHI (only using review 61 where there's no review 60 - var:rev_num)
-bmi_data_test <- bmi_data %>% 
+# Select single record per CHI (selecting the most recent record with a valid 
+# height and weight. if no valid height and weight, keep record for the
+# completeness section)
+bmi_data <- bmi_data %>% 
   arrange(chi, desc(daterec)) %>% 
   group_by(chi) %>% 
   
@@ -107,7 +109,7 @@ bmi_data_test <- bmi_data %>%
   group_by(chi) %>% 
   mutate(rec_number = row_number()) %>% 
   ungroup() %>% 
-  filter(rec_number == 1)                                                       # 661,576
+  filter(rec_number == 1)                                                        # 661,576 obs.
 
 
 ### 3 - Match Postcodes ----
@@ -192,28 +194,28 @@ bmi_data$HB2018 <- bmi_data$HB2018 %>%
 
 # exclude records that have blank HB2018
 # blank_hb2019 <- bmi_data %>%
-#   subset(is.na(HB2018))                                                         #3,440 obs.
+#   subset(is.na(HB2018))                                                         #3,580 obs.
 
 # exclude records that have blank HB2018
 bmi_data <- bmi_data %>%
-  subset(!(is.na(HB2018)))                                                        #657,997 obs.
+  subset(!(is.na(HB2018)))                                                        #657,996 obs.
 
 
 # Extract west lothian excluded data
 blank_data_west_lothian <- bmi_data %>%
-  subset(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,222 obs.
+  subset(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,217 obs.
 
 ## Exclude cases
 # Exclude West Lothian for 2007/08 unless school attendance is outwith West Lothian
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,775 obs.
+  subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,779 obs.
 
 
 # Exclude Kircaldy schools during 2008/09
 kircaldy <- c('F735L','F736L','F737L','F738L','F739L','F740L','F741L',
               'F743L','F744L','F745L','F746L','F747L','F749L','F882L','F884L')
 bmi_data <- bmi_data %>%
-  subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))                       #655,573 obs.
+  subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))                       #655,577 obs.
 
 # Remove variable Kircaldy
 rm(kircaldy)
@@ -221,7 +223,7 @@ gc()
 
 # Exclude schlyr 02/03 from Borders data
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'B' & schlyr_exam == '0203'))                                #655,203 obs.
+  subset(!(HB2018 == 'B' & schlyr_exam == '0203'))                                #655,207 obs.
 
 ## Select relevant years function
 apply_hb_year <- function(x, HB, ey, cy) {
@@ -249,7 +251,7 @@ bmi_data <- bmi_data %>%
   apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
   apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
   apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
-  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr)                              #650,899 obs.
+  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr)                              #650,904 obs.
 
 
 ### 5 - Child Data Sort/Analysis ----
@@ -296,7 +298,7 @@ bmi_data <- subset(bmi_data, agemth >=48 & agemth <96)                          
 ## number of reviews for HB and CA for the coverage calculations.
 ## This file contains all reviews (with and without valid height and weight)
 ## save as data frame?
-saveRDS(host_folder, "bmi_data_coverage.rds")
+saveRDS(bmi_data, paste0(host_folder, "bmi_data_coverage.rds"))
 
 
 
@@ -306,7 +308,7 @@ bmi_data <- mutate(bmi_data, height = as.numeric(height),
 
 # Select only records with a valid (i.e. non-zero) height and weight
 bmi_data <- subset(bmi_data, height != 0)
-bmi_data <- subset(bmi_data, weight != 0)                                         #643,157 obs
+bmi_data <- subset(bmi_data, weight != 0)                                         #643,134 obs
 
 # Create variable to show height in metres
 #height in mm, weight in cg???
@@ -320,7 +322,7 @@ bmi_data <- mutate(bmi_data, bmi = weight_kg/(height_m*height_m))
 # Child's age in months will lie between two ages in 
 # in the lookup table. Line below calculates the next 
 # lowest whole month and converts to years.
-bmi_data <- mutate(bmi_data, ageyr = round(1000*trunc(agemth)/12)/1000)           #643,157 obs
+bmi_data <- mutate(bmi_data, ageyr = round(1000*trunc(agemth)/12)/1000)           #643,134 obs
 
 
 
@@ -343,7 +345,7 @@ bmi_data <- bmi_data %>%
                 LFLO_h = height_female_l, MFLO_h = height_female_m, SFLO_h = height_female_s,
                 LMLO_w = weight_male_l, MMLO_w = weight_male_m, SMLO_w = weight_male_s,
                 LFLO_w = weight_female_l, MFLO_w = weight_female_m, SFLO_w = weight_female_s,
-                agelo = ageyr)                                                                 #643,157 obs
+                agelo = ageyr)                                                                 #643,134 obs
 
 
 # Child's age in months will lie between two ages in 
@@ -361,7 +363,7 @@ bmi_data <- bmi_data %>%
                 LFHI_h = height_female_l, MFHI_h = height_female_m, SFHI_h = height_female_s,
                 LMHI_w = weight_male_l, MMHI_w = weight_male_m, SMHI_w = weight_male_s,
                 LFHI_w = weight_female_l, MFHI_w = weight_female_m, SFHI_w = weight_female_s,
-                agehi = ageyr)                                                                 #643,157 obs
+                agehi = ageyr)                                                                 #643,134 obs
 
 # Calculate age in years to 2 decimal places for BMI, Height and Weight.
 bmi_data <- bmi_data %>%
@@ -419,7 +421,7 @@ bmi_data <- bmi_data %>%
                              (SMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SMHI_w-SMLO_w)),
                            sex == "F" ~
                              (SFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SFHI_w-SFLO_w)),
-                           TRUE ~ 0))                                                            #643,157 obs
+                           TRUE ~ 0))                                                            #643,134 obs
 
 
 # Calculate standard deviation scores
@@ -445,13 +447,13 @@ bmi_data <- bmi_data %>%
          #compute sds to 2 decimal places.
          sds_w=round(sds2_w,2),
          # Calculate centiles.
-         cent_w=100 * pnorm(sds_w, mean = 0, sd = 1))                             #643,157 obs
+         cent_w=100 * pnorm(sds_w, mean = 0, sd = 1))                             #643,134 obs
 
 saveRDS(bmi_data, paste0(host_folder, "RAPtemp_all_reviews.rds"))
 bmi_data <- readRDS(paste0(host_folder, "RAPtemp_all_reviews.rds"))
 # select out those outwith the range deemed to be real.
 bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) & 
-                     (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))     #642,660 obs
+                     (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))     #642,643 obs
 
 
 # Create epidemiological and clinical thresholds
@@ -476,7 +478,7 @@ bmi_data <- bmi_data %>%
          tot = 1)
 
 
-saveRDS(bmi_data, paste0(host_folder, "temp_all_reviews_2.rds"))                  #642,660 obs.
+saveRDS(bmi_data, paste0(host_folder, "temp_all_reviews_2.rds"))                  #642,643 obs.
 bmi_data <- readRDS(paste0(host_folder, "temp_all_reviews_2.rds"))
 
 # read in deprivation lookup. 
@@ -538,7 +540,7 @@ bmi_data <- bmi_data %>%
     ~ simd_2006,
     schlyr_exam %in% c("0102", "0203", "0304") 
     ~ simd_2004
-  ))                                                                              #642,660 obs.
+  ))                                                                              #642,643 obs.
 
 # create data frame for records with blank simd
 blank_simd <- bmi_data %>%
@@ -613,7 +615,7 @@ bmi_basefile <- bmi_data %>%
 # This file contains data for school years 2001/02 to 2017/18 and should 
 # be used for information requests etc. so that any figures produced match 
 # those published in financial year 2017/18.
-saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))              #642,660 obs.
+saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))              #642,643 obs.
 
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
 
@@ -974,29 +976,24 @@ bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
 # create totals for individual hb and all participating boards (for bmi_data_coverage)
 # create a variable for the total number of reviews
-
-# May not be needed
-#bmi_coverage_data <- bmi_coverage_data %>% 
-#  mutate(total_reviews = 1)
-
+bmi_data_coverage <- bmi_data_coverage %>% mutate(count = 1)
 # board level
 hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
-                   summarise_at(n(), sum)  %>% ungroup(),
-# Scotland level (all participating boards)
-                 bmi_data_coverage %>% group_by(schlyr_exam) %>% 
-                   summarise_at(n(), sum) %>%
-                   mutate(HB2019 = "Total") %>% ungroup())
+                         summarise(total_reviews = sum(count))  %>% ungroup(),
+                       # Scotland level (all participating boards)
+                       bmi_data_coverage %>% group_by(schlyr_exam) %>% 
+                         summarise(total_reviews = sum(count)) %>%
+                         mutate(HB2019 = "Total") %>% ungroup())
 
 
 # create a variable for the total number of reviews
-bmi_basefile <- bmi_basefile %>% 
-  mutate(total_reviews = 1) 
+bmi_basefile <- bmi_basefile %>% mutate(count = 1) 
 # board level  
 hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
-                               summarise_at(n(), sum)  %>% ungroup(),
+                               summarise(valid_reviews = sum(count))  %>% ungroup(),
 # Scotland level (all participating boards)
                              bmi_basefile %>% group_by(schlyr_exam) %>%
-                               summarise_at(n(), sum) %>%
+                               summarise(valid_reviews = sum(count)) %>%
                                mutate(HB2019 = "Total") %>% ungroup())
 
 # Add all Health Board Files (population, all P1 reviews,
