@@ -176,15 +176,15 @@ gc()
 ### 4 - Health Board Data Sort ----
 
 ## Recode HB variable to single character cypher
-bmi_data$HB2018 <- bmi_data$HB2018 %>%
+bmi_data$HB2019 <- bmi_data$HB2019 %>%
   recode('S08000015' = 'A',
          'S08000016' = 'B',
          'S08000017' = 'Y',
          'S08000019' = 'V',
          'S08000020' = 'N',
-         'S08000021' = 'G',
+         'S08000031' = 'G',
          'S08000022' = 'H',
-         'S08000023' = 'L',
+         'S08000032' = 'L',
          'S08000024' = 'S',
          'S08000025' = 'R',
          'S08000026' = 'Z',
@@ -192,23 +192,23 @@ bmi_data$HB2018 <- bmi_data$HB2018 %>%
          'S08000029' = 'F',
          'S08000030' = 'T')
 
-# exclude records that have blank HB2018
+# exclude records that have blank HB2019
 # blank_hb2019 <- bmi_data %>%
-#   subset(is.na(HB2018))                                                         #3,580 obs.
+#   subset(is.na(HB2019))                                                         #3,580 obs.
 
-# exclude records that have blank HB2018
+# exclude records that have blank HB2019
 bmi_data <- bmi_data %>%
-  subset(!(is.na(HB2018)))                                                        #657,996 obs.
+  subset(!(is.na(HB2019)))                                                        #657,996 obs.
 
 
 # Extract west lothian excluded data
 blank_data_west_lothian <- bmi_data %>%
-  subset(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,217 obs.
+  subset(HB2019 == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,217 obs.
 
 ## Exclude cases
 # Exclude West Lothian for 2007/08 unless school attendance is outwith West Lothian
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,779 obs.
+  subset(!(HB2019 == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,779 obs.
 
 
 # Exclude Kircaldy schools during 2008/09
@@ -223,14 +223,14 @@ gc()
 
 # Exclude schlyr 02/03 from Borders data
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'B' & schlyr_exam == '0203'))                                #655,207 obs.
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))                                #655,207 obs.
 
 ## Select relevant years function
 apply_hb_year <- function(x, HB, ey, cy) {
   
   x <- x %>%
-    filter((HB2018 == HB & as.numeric(schlyr_exam) >= ey & 
-              as.numeric(schlyr_exam) <= cy) | HB2018 != HB)
+    filter((HB2019 == HB & as.numeric(schlyr_exam) >= ey & 
+              as.numeric(schlyr_exam) <= cy) | HB2019 != HB)
   
   return(x)
   
@@ -647,13 +647,29 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819")) #%>% 
+                                 year == 2017 ~ "1718"))  #,
+#                                 year == 2018 ~ "1819")) #%>% 
+## Recode HB variable to single character cypher
+hb_pop_estimates$HB2019 <- hb_pop_estimates$HB2019 %>%
+  recode('S08000015' = 'A',
+         'S08000016' = 'B',
+         'S08000017' = 'Y',
+         'S08000019' = 'V',
+         'S08000020' = 'N',
+         'S08000031' = 'G',
+         'S08000022' = 'H',
+         'S08000032' = 'L',
+         'S08000024' = 'S',
+         'S08000025' = 'R',
+         'S08000026' = 'Z',
+         'S08000028' = 'W',
+         'S08000029' = 'F',
+         'S08000030' = 'T') #%>% 
 # Exclude schlyr 02/03 from Borders data
 hb_pop_estimates <- hb_pop_estimates %>%
-  subset(!(HB2018 == 'B' & schlyr_exam == '0203')) %>%
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203')) #%>%
 # call the function for creating HB cypher
-apply_hb_cypher(hb_pop_estimates) # %>%
+### apply_hb_cypher(hb_pop_estimates) # %>%
 # call the function for selecing the relevant year for each board
   hb_pop_estimates <- hb_pop_estimates %>%
   apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
@@ -804,7 +820,7 @@ gender_pop_estimates <- gender_pop_estimates %>%
                                  year == 2018 ~ "1819")) # %>% 
 # Exclude schlyr 02/03 from Borders data
 hb_pop_estimates <- hb_pop_estimates %>%
-  subset(!(HB2018 == 'B' & schlyr_exam == '0203')) %>%
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203')) %>%
   # call the function for creating HB cypher
   apply_hb_cypher(hb_pop_estimates) # %>%
 # call the function for selecing the relevant year for each board
@@ -999,11 +1015,9 @@ hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
 # Add all Health Board Files (population, all P1 reviews,
 # P1 reviews with valid h&w measurements)
 ### is this the correct way to use bind_rows?
-hb_completeness_data <- bind_rows(hb_pop_estimates, hb_p1rev_data,
-                                  hb_valid_p1rev_data) %>% 
-  spread(HB2018, schlyr_exam)
-
-
+hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data, 
+                                  by = c("HB2019", "schlyr_exam")) %>% 
+        full_join(hb_valid_p1rev_data, by = c("HB2019", "schlyr_exam"))
 
 
 
