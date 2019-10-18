@@ -630,7 +630,7 @@ hb_pop_estimates <- readRDS(paste0(
 
 hb_pop_estimates <- hb_pop_estimates %>% 
   filter(age == 5) %>%
-  filter(year >= 2000 & year <=2018) %>% 
+  filter(year >= 2001 & year <=2017) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
                                  year == 2003 ~ "0304",
@@ -647,8 +647,8 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718"))  #,
-#                                 year == 2018 ~ "1819")) #%>% 
+                                 year == 2017 ~ "1718"))  
+
 ## Recode HB variable to single character cypher
 hb_pop_estimates$HB2019 <- hb_pop_estimates$HB2019 %>%
   recode('S08000015' = 'A',
@@ -664,12 +664,15 @@ hb_pop_estimates$HB2019 <- hb_pop_estimates$HB2019 %>%
          'S08000026' = 'Z',
          'S08000028' = 'W',
          'S08000029' = 'F',
-         'S08000030' = 'T') #%>% 
+         'S08000030' = 'T') 
+
 # Exclude schlyr 02/03 from Borders data
 hb_pop_estimates <- hb_pop_estimates %>%
-  subset(!(HB2019 == 'B' & schlyr_exam == '0203')) #%>%
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
+
 # call the function for creating HB cypher
 ### apply_hb_cypher(hb_pop_estimates) # %>%
+
 # call the function for selecing the relevant year for each board
   hb_pop_estimates <- hb_pop_estimates %>%
   apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
@@ -686,48 +689,36 @@ hb_pop_estimates <- hb_pop_estimates %>%
   apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
   apply_hb_year(HB = 'R', ey = 1011, cy = currentYr) 
 
-
 # create totals for individual hb and all 
 # participating boards (for hb_pop_estimates)
 # Board level
 hb_pop_estimates <- rbind(hb_pop_estimates %>% 
                             group_by(HB2019, schlyr_exam)%>%
-                            summarise(pop = sum(pop)) %>% ungroup,
+                            summarise(pop = sum(pop)) %>% ungroup(),
                           # Scotland level (all participating boards)
                           hb_pop_estimates %>% group_by(schlyr_exam) %>%
                             summarise(pop = sum(pop)) %>%
-                            mutate(HB2019 = "Total") %>% ungroup)
-
+                            mutate(HB2019 = "Total") %>% ungroup())
 
 # create totals for individual hb and all participating boards (for hb_data)
 # Board level
 hb_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
-                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup,
+                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup(),
                  # Scotland level (all participating boards)
                  bmi_basefile %>% group_by(schlyr_exam) %>% 
                    summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                   mutate(HB2019 = "Total") %>% ungroup)
-
-# JV helped to fix the above rbind, script below still useful to test
-# by HB and all participating boards separately
-#test <- bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
-#  summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup
-#test1 <- bmi_basefile %>% group_by(schlyr_exam) %>% 
-#  summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-#  mutate(HB2019 = "Total") %>% ungroup
-
-#test2 <- rbind(test, test1)
+                   mutate(HB2019 = "Total") %>% ungroup())
 
 # Match hb data to hb population estimates
 hb_data <- left_join(hb_data, hb_pop_estimates, 
                      by = c("HB2019", "schlyr_exam"))
 
-
 # Confidence intervals (hb)
 # use the function to calculate confidence intervals
 calculate_ci(hb_data)
 
-
+# save as csv file
+write_csv(hb_data, paste0(host_folder, Output, "hb_data.csv"))
 
 
 ### Council area analysis
@@ -740,7 +731,7 @@ ca_pop_estimates <- readRDS(paste0(
 
 ca_pop_estimates <- ca_pop_estimates %>% 
   filter(age == 5) %>%
-  filter(year >= 2000 & year <=2018) %>% 
+  filter(year >= 2001 & year <=2017) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
                                  year == 2003 ~ "0304",
@@ -757,20 +748,19 @@ ca_pop_estimates <- ca_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819")) 
+                                 year == 2017 ~ "1718"))  
 
 # create totals for individual council areas (for ca_pop_estimates)
 # council area level
 ca_pop_estimates <- rbind(ca_pop_estimates %>% 
                             group_by(CA2019, schlyr_exam)%>%
-                            summarise(pop = sum(pop)) %>% ungroup)
+                            summarise(pop = sum(pop)) %>% ungroup())
 
 
 # create totals for individual hb and all participating boards (for ca_data)
 # council area level
 ca_data <- rbind(bmi_basefile %>% group_by(CA2019, schlyr_exam) %>%
-                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup)
+                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
 
 # Select council areas with a valid population. Some council areas 
@@ -787,6 +777,8 @@ ca_data <- left_join(ca_data, ca_pop_estimates,
 calculate_ci(ca_data)
 
 
+# save as csv file
+write_csv(ca_data, paste0(host_folder, Output, "ca_data.csv"))
 
 
 ### Gender analysis
@@ -799,7 +791,7 @@ gender_pop_estimates <- readRDS(paste0(
 
 gender_pop_estimates <- gender_pop_estimates %>% 
   filter(age == 5) %>%
-  filter(year >= 2000 & year <=2018) %>% 
+  filter(year >= 2001 & year <=2017) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
                                  year == 2003 ~ "0304",
@@ -816,13 +808,15 @@ gender_pop_estimates <- gender_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819")) # %>% 
+                                 year == 2017 ~ "1718"))  
+
 # Exclude schlyr 02/03 from Borders data
 hb_pop_estimates <- hb_pop_estimates %>%
-  subset(!(HB2019 == 'B' & schlyr_exam == '0203')) %>%
-  # call the function for creating HB cypher
-  apply_hb_cypher(hb_pop_estimates) # %>%
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
+
+# call the function for creating HB cypher
+# apply_hb_cypher(hb_pop_estimates) 
+
 # call the function for selecing the relevant year for each board
 hb_pop_estimates <- hb_pop_estimates %>%
   apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
@@ -843,21 +837,21 @@ hb_pop_estimates <- hb_pop_estimates %>%
 # all participating boards
 gender_pop_estimates <- rbind(gender_pop_estimates %>% 
                                 group_by(sex, schlyr_exam)%>%
-                                summarise(pop = sum(pop)) %>% ungroup,
+                                summarise(pop = sum(pop)) %>% ungroup(),
                               # totals by year (all participating boards)
                               gender_pop_estimates %>% group_by(schlyr_exam) %>%
                                 summarise(pop = sum(pop)) %>%
-                                mutate(sex = "Total") %>% ungroup)
+                                mutate(sex = "Total") %>% ungroup())
 
 
 # create totals for male and female (for gender_data)
 # all participating boards
 gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
-                       summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup,
+                       summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup(),
                      # totals by year (all participating boards)
                      bmi_basefile %>% group_by(schlyr_exam) %>% 
                        summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                       mutate(sex = "Total") %>% ungroup)
+                       mutate(sex = "Total") %>% ungroup())
 
 
 # Match gender data to gender population estimates
@@ -869,6 +863,9 @@ gender_data <- left_join(gender_data, gender_pop_estimates,
 # use the function to calculate confidence intervals
 calculate_ci(gender_data)
 
+
+# save as csv file
+write_csv(gender_data, paste0(host_folder, Output, "gender_data.csv"))
 
 
 
@@ -899,8 +896,7 @@ simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
                                  year == 2013 ~ "1314"))
 
 # Recode simd 2004 & 2006 so all go from 1=most to 5=least
-
-
+### still to add this section (see previous work on SIMD)
 
 # assign the appropriate SIMD value to a record depending on the year
 simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
@@ -919,7 +915,7 @@ simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
 # all participating boards
 simd_pop_estimates_1 <- rbind(simd_pop_estimates_1 %>% 
                                 group_by(simd, schlyr_exam)%>%
-                                summarise(pop = sum(pop)) %>% ungroup)
+                                summarise(pop = sum(pop)) %>% ungroup())
 
 
 # create population file from the GRO mid year population estimates
@@ -930,17 +926,16 @@ simd_pop_estimates_2 <- readRDS(paste0(
 
 simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
   rename(pop = age5) %>%
-  filter(year >= 2014 & year <=2018) %>% 
+  filter(year >= 2014 & year <=2017) %>% 
   mutate(schlyr_exam = case_when(year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819"))
+                                 year == 2017 ~ "1718"))
 
 # assign the appropriate SIMD value to a record depending on the year
 simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
   mutate(simd = case_when(
-    schlyr_exam %in% c("1415", "1516", "1617", "1718", "1819") 
+    schlyr_exam %in% c("1415", "1516", "1617", "1718") 
     ~ simd2016_sc_quintile
   ))
 
@@ -948,7 +943,7 @@ simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
 # all participating boards
 simd_pop_estimates_2 <- rbind(simd_pop_estimates_2 %>% 
                                 group_by(simd, schlyr_exam)%>%
-                                summarise(pop = sum(pop)) %>% ungroup)
+                                summarise(pop = sum(pop)) %>% ungroup())
 
 
 # Match the two simd populations files together
@@ -960,7 +955,7 @@ simd_pop_estimates <- left_join(simd_pop_estimates_1, simd_pop_estimates_2,
 # create totals for simd (simd_data)
 # all participating boards
 simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
-                     summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup)
+                     summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
 # add simd_data to simd_population_estimates
 simd_data <- left_join(simd_data, simd_pop_estimates, 
@@ -972,7 +967,8 @@ simd_data <- left_join(simd_data, simd_pop_estimates,
 calculate_ci(simd_data)
 
 
-
+# save as csv file
+write_csv(simd_data, paste0(host_folder, Output, "simd_data.csv"))
 
 
 ### data completeness
@@ -990,19 +986,22 @@ calculate_ci(simd_data)
 # board level completeness
 bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
-# create totals for individual hb and all participating boards (for bmi_data_coverage)
+# create totals for the number of records with and without a valid height and 
+# weight for individual hb and all participating boards (for bmi_data_coverage)
 # create a variable for the total number of reviews
 bmi_data_coverage <- bmi_data_coverage %>% mutate(count = 1)
 # board level
 hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
                          summarise(total_reviews = sum(count))  %>% ungroup(),
-                       # Scotland level (all participating boards)
+# Scotland level (all participating boards)
                        bmi_data_coverage %>% group_by(schlyr_exam) %>% 
                          summarise(total_reviews = sum(count)) %>%
                          mutate(HB2019 = "Total") %>% ungroup())
 
 
-# create a variable for the total number of reviews
+# create totals for the number of records with a valid height and weight
+# for individual hb and all participating boards (for bmi_basefile)
+# create a variable for the total number of valid reviews
 bmi_basefile <- bmi_basefile %>% mutate(count = 1) 
 # board level  
 hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
@@ -1012,17 +1011,42 @@ hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
                                summarise(valid_reviews = sum(count)) %>%
                                mutate(HB2019 = "Total") %>% ungroup())
 
-# Add all Health Board Files (population, all P1 reviews,
+# Add all health board files (population, all P1 reviews and
 # P1 reviews with valid h&w measurements)
-### is this the correct way to use bind_rows?
 hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data, 
                                   by = c("HB2019", "schlyr_exam")) %>% 
         full_join(hb_valid_p1rev_data, by = c("HB2019", "schlyr_exam"))
 
+# save as excel file
+write_csv(hb_completeness_data, paste0(host_folder, Output,
+                                       "ca_completeness_data.csv"))
 
 
 
+# council area completeness
+# create totals for the number of records with and without a valid height and 
+# weight for individual council area (for bmi_data_coverage)
+ca_p1rev_data <- rbind(bmi_data_coverage %>% 
+                         group_by(CA2019, schlyr_exam)%>%
+                         summarise(total_reviews = sum(count)) %>% ungroup())
 
+# create totals for the number of records with a valid height and weight
+# for individual council area (for bmi_basefile)
+ca_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(CA2019, schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count))  %>% 
+                               ungroup())
+
+# Add all council area files (population, all P1 reviews and
+# P1 reviews with valid h&w measurements)
+ca_completeness_data <- full_join(ca_pop_estimates, ca_p1rev_data, 
+                                  by = c("CA2019", "schlyr_exam")) %>% 
+  full_join(ca_valid_p1rev_data, by = c("CA2019", "schlyr_exam")) %>% 
+subset(total_reviews >50)
+
+
+# save as csv file
+write_csv(ca_completeness_data, paste0(host_folder, Output,
+                                       "ca_completeness_data.csv"))
 
 
 
