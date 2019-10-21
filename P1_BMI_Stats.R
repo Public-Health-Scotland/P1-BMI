@@ -165,6 +165,10 @@ bmi_data <- subset(bmi_data, select = -c(chiQ, examQN, pcodeCHI))
 pcd <- read_rds(file.path(lookupFolder, "Unicode/Geography/Scottish Postcode Directory", 
                           "Scottish_Postcode_Directory_2019_2.rds"))
 
+# remove unnecessary variables
+pcd <- subset(pcd, select = c(pc7, HB2019, HB2019Name, HB2018, CA2019,
+                              CA2019Name, CA2018))
+
 ## Merge data
 bmi_data <- merge(bmi_data, pcd, by = c("pc7"), all.x = TRUE, all.y = FALSE)
 
