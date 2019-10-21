@@ -108,7 +108,46 @@ simd_2009 <- read_spss(paste0(plat_filepath,
   mutate(year = "simd_2009")
 
 ### 7 - Council Area Recode ----
-apply_hb_cypher <- function(df) {
+apply_ca_desc <- function(df) {
+  df <- df %>%
+    mutate(council_area_desc = case_when(CA2019 == "S12000033" ~ "Aberdeen City",
+                                         CA2019 == "S12000034" ~ "Aberdeenshire",
+                                         CA2019 == "S12000041" ~ "Angus",
+                                         CA2019 == "S12000035" ~ "Argyll & Bute",
+                                         CA2019 == "S12000026" ~ "Scottish Borders",
+                                         CA2019 == "S12000005" ~ "Clackmannanshire",
+                                         CA2019 == "S12000039" ~ "West Dunbartonshire",
+                                         CA2019 == "S12000006" ~ "Dumfries & Galloway",
+                                         CA2019 == "S12000042" ~ "Dundee City",
+                                         CA2019 == "S12000008" ~ "East Ayrshire",
+                                         CA2019 == "S12000045" ~ "East Dunbartonshire",
+                                         CA2019 == "S12000010" ~ "East Lothian",
+                                         CA2019 == "S12000011" ~ "East Renfrewshire",
+                                         CA2019 == "S12000036" ~ "City of Edinburgh",
+                                         CA2019 == "S12000014" ~ "Falkirk",
+                                         CA2019 == "S12000047" ~ "Fife",
+                                         CA2019 == "S12000046" ~ "Glasgow City",
+                                         CA2019 == "S12000017" ~ "Highland",
+                                         CA2019 == "S12000018" ~ "Inverclyde",
+                                         CA2019 == "S12000019" ~ "Midlothian",
+                                         CA2019 == "S12000020" ~ "Moray",
+                                         CA2019 == "S12000021" ~ "North Ayrshire",
+                                         CA2019 == "S12000044" ~ "North Lanarkshire",
+                                         CA2019 == "S12000023" ~ "Orkney Islands",
+                                         CA2019 == "S12000048" ~ "Perth & Kinross",
+                                         CA2019 == "S12000038" ~ "Renfrewshire",
+                                         CA2019 == "S12000027" ~ "Shetland Islands",
+                                         CA2019 == "S12000028" ~ "South Ayrshire",
+                                         CA2019 == "S12000029" ~ "South Lanarkshire",
+                                         CA2019 == "S12000030" ~ "Stirling",
+                                         CA2019 == "S12000040" ~ "West Lothian",
+                                         CA2019 == "S12000013" ~ "Na h-Eileanan Siar",
+                                         TRUE ~ "Other"))
+  return(df)
+}
+
+### 7 - Council Area Recode ----
+apply_ca_cypher_desc <- function(df) {
   df <- df %>%
     mutate(council_area_name = case_when(council_area == 1 ~ "Aberdeen City",
                                          council_area == 2 ~ "Aberdeenshire",
@@ -147,22 +186,22 @@ apply_hb_cypher <- function(df) {
 }
 
 # hb res
-apply_hb_cypher <- function(df) {
+apply_hb_desc <- function(df) {
   df <- df %>%
-    mutate(hbres_name = case_when(hbres_currentdate == "S08000015" ~ "NHS Ayrshire & Arran",
-                                  hbres_currentdate == "S08000016" ~ "NHS Borders", 
-                                  hbres_currentdate == "S08000017" ~ "NHS Dumfries & Galloway",
-                                  hbres_currentdate == "S08000018" ~ "NHS Fife",
-                                  hbres_currentdate == "S08000019" ~ "NHS Forth Valley", 
-                                  hbres_currentdate == "S08000020" ~ "NHS Grampian",
-                                  hbres_currentdate == "S08000021" ~ "NHS Greater Glasgow & Clyde",
-                                  hbres_currentdate == "S08000022" ~ "NHS Highland", 
-                                  hbres_currentdate == "S08000023" ~ "NHS Lanarkshire",
-                                  hbres_currentdate == "S08000024" ~ "NHS Lothian",
-                                  hbres_currentdate == "S08000025" ~ "NHS Orkney", 
-                                  hbres_currentdate == "S08000026" ~ "NHS Shetland", 
-                                  hbres_currentdate == "S08000027" ~ "NHS Tayside", 
-                                  hbres_currentdate == "S08000028" ~ "NHS Western Isles", 
+    mutate(hbres_name = case_when(HB2019 == "S08000015" ~ "NHS Ayrshire & Arran",
+                                  HB2019 == "S08000016" ~ "NHS Borders", 
+                                  HB2019 == "S08000017" ~ "NHS Dumfries & Galloway",
+                                  HB2019 == "S08000018" ~ "NHS Fife",
+                                  HB2019 == "S08000019" ~ "NHS Forth Valley", 
+                                  HB2019 == "S08000020" ~ "NHS Grampian",
+                                  HB2019 == "S08000021" ~ "NHS Greater Glasgow & Clyde",
+                                  HB2019 == "S08000022" ~ "NHS Highland", 
+                                  HB2019 == "S08000023" ~ "NHS Lanarkshire",
+                                  HB2019 == "S08000024" ~ "NHS Lothian",
+                                  HB2019 == "S08000025" ~ "NHS Orkney", 
+                                  HB2019 == "S08000026" ~ "NHS Shetland", 
+                                  HB2019 == "S08000027" ~ "NHS Tayside", 
+                                  HB2019 == "S08000028" ~ "NHS Western Isles", 
                                   TRUE ~ "Other"))
   return(df)
 }
