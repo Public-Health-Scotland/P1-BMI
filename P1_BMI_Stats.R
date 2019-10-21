@@ -974,12 +974,41 @@ write_csv(simd_data, paste0(host_folder, Output, "simd_data.csv"))
 ### data completeness
 
 # calculate scotland population estimates
-# can we add this step when we bring in the population file
-# and calculate hb and scotland together?
+sco_pop_estimates <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop)
+
+sco_pop_estimates <- sco_pop_estimates %>% 
+  filter(age == 5) %>%
+  filter(year >= 2001 & year <=2017) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314",
+                                 year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718"))  
 
 
+# Scotland level population estimates by year
+sco_pop_estimates <- rbind(sco_pop_estimates %>% 
+                             group_by(schlyr_exam) %>%
+                             summarise(pop = sum(pop)) %>%
+                             mutate(HB2019 = "Total") %>% ungroup())
 
-
+# save as excel file
+write_csv(sco_pop_estimates, paste0(host_folder, Output,
+                                       "scotland_pop.csv"))
 
 
 
