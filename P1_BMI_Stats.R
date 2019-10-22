@@ -32,6 +32,11 @@ library(here)
 library(readr)
 library(tidyr)
 
+plat_filepath <- 
+
+source(here("Code", "functions.R"))
+
+
 ## File Locations
 # Source Data
 server_desktop <- "server"
@@ -39,11 +44,11 @@ server_desktop <- "server"
 if (server_desktop == "server") {
   host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/"
   source_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data"
-  lookupFolder <- "/conf/linkage/output/lookups"
+  lookup_folder <- "/conf/linkage/output/lookups"
 } else if (server_desktop == "desktop") {
   host_folder <- "//stats/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/"
   source_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data"
-  lookupFolder <-"//Isdsf00d03/cl-out/lookups"
+  lookup_folder <-"//Isdsf00d03/cl-out/lookups"
 }
 
 ## Variables
@@ -162,7 +167,7 @@ bmi_data <- subset(bmi_data, select = -c(chiQ, examQN, pcodeCHI))
 
 ## Add CA, HSCP, etc. from lookup
 # Import Reference File
-pcd <- read_rds(file.path(lookupFolder, "Unicode/Geography/Scottish Postcode Directory", 
+pcd <- read_rds(file.path(lookup_folder, "Unicode/Geography/Scottish Postcode Directory", 
                           "Scottish_Postcode_Directory_2019_2.rds"))
 
 # remove unnecessary variables
@@ -487,31 +492,31 @@ bmi_data <- readRDS(paste0(host_folder, "temp_all_reviews_2.rds"))
 
 # read in deprivation lookup. 
 simd_2016 <- readRDS(paste0(
-  lookupFolder, "/Unicode/Deprivation/postcode_2019_2_simd2016.rds")) %>%
+  lookup_folder, "/Unicode/Deprivation/postcode_2019_2_simd2016.rds")) %>%
   select(pc7, simd2016_sc_quintile) %>% 
   rename(simd = simd2016_sc_quintile) %>% 
   mutate(year = "simd_2016")
 
 simd_2012 <- readRDS(paste0(
-  lookupFolder, "/Unicode/Deprivation/postcode_2016_1_simd2012.rds")) %>%
+  lookup_folder, "/Unicode/Deprivation/postcode_2016_1_simd2012.rds")) %>%
   select(pc7, simd2012_sc_quintile) %>% 
   rename(simd = simd2012_sc_quintile) %>% 
   mutate(year = "simd_2012")
 
 simd_2009 <- readRDS(paste0(
-  lookupFolder, "/Unicode/Deprivation/", "postcode_2012_2_simd2009v2.rds")) %>%
+  lookup_folder, "/Unicode/Deprivation/", "postcode_2012_2_simd2009v2.rds")) %>%
   select(pc7, simd2009v2_sc_quintile) %>% 
   rename(simd = simd2009v2_sc_quintile) %>% 
   mutate(year = "simd_2009")
 
 simd_2006 <- readRDS(paste0(
-  lookupFolder, "/Unicode/Deprivation/", "postcode_2009_2_simd2006.rds")) %>%
+  lookup_folder, "/Unicode/Deprivation/", "postcode_2009_2_simd2006.rds")) %>%
   select(pc7, simd2006_sc_quintile) %>% 
   rename(simd = simd2006_sc_quintile) %>% 
   mutate(year = "simd_2006")
 
 simd_2004 <- readRDS(paste0(
-  lookupFolder, "/Unicode/Deprivation/", "postcode_2006_2_simd2004.rds")) %>%
+  lookup_folder, "/Unicode/Deprivation/", "postcode_2006_2_simd2004.rds")) %>%
   select(pc7, simd2004_sc_quintile) %>% 
   rename(simd = simd2004_sc_quintile) %>% 
   mutate(year = "simd_2004")
@@ -629,7 +634,7 @@ bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
 # create population file from the GRO mid year population estimates
 # of five year olds in each HB and for all participating boards
 hb_pop_estimates <- readRDS(paste0(
-  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
 
 hb_pop_estimates <- hb_pop_estimates %>% 
@@ -732,7 +737,7 @@ write_csv(hb_data, paste0(host_folder, Output, "hb_data.csv"))
 # create population file from the GRO mid year population estimates
 # of five year olds in each ca 
 ca_pop_estimates <- readRDS(paste0(
-  lookupFolder, "/Unicode/Populations/Estimates/CA2019_pop_est_1981_2018.rds")) %>%
+  lookup_folder, "/Unicode/Populations/Estimates/CA2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
 
 ca_pop_estimates <- ca_pop_estimates %>% 
@@ -792,7 +797,7 @@ write_csv(ca_data, paste0(host_folder, Output, "ca_data.csv"))
 # create population file from the GRO mid year population estimates
 # of five year olds by gender.
 gender_pop_estimates <- readRDS(paste0(
-  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop, sex = Sex)
 
 gender_pop_estimates <- gender_pop_estimates %>% 
@@ -880,7 +885,7 @@ write_csv(gender_data, paste0(host_folder, Output, "gender_data.csv"))
 # create population file from the GRO mid year population estimates
 # of five year olds by simd (for years 01/02 to 13/14)
 simd_pop_estimates_1 <- readRDS(paste0(
-  lookupFolder, "/Unicode/Populations/Estimates/DataZone2001_pop_est_2001_2014.rds")) %>%
+  lookup_folder, "/Unicode/Populations/Estimates/DataZone2001_pop_est_2001_2014.rds")) %>%
   select(Year, DataZone2001, SEX, AGE5, simd2004_sc_quintile, 
          simd2006_sc_quintile, simd2009v2_sc_quintile, simd2012_sc_quintile)
 
@@ -927,7 +932,7 @@ simd_pop_estimates_1 <- rbind(simd_pop_estimates_1 %>%
 # create population file from the GRO mid year population estimates
 # of five year olds by simd (for years 14/15 to current year)
 simd_pop_estimates_2 <- readRDS(paste0(
-  lookupFolder, "/Unicode/Populations/Estimates/DataZone2011_pop_est_2011_2018.rds")) %>%
+  lookup_folder, "/Unicode/Populations/Estimates/DataZone2011_pop_est_2011_2018.rds")) %>%
   select(year, datazone2011, sex, age5, simd2016_sc_quintile)
 
 simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
@@ -981,7 +986,7 @@ write_csv(simd_data, paste0(host_folder, Output, "simd_data.csv"))
 
 # calculate scotland population estimates
 sco_pop_estimates <- readRDS(paste0(
-  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
 
 sco_pop_estimates <- sco_pop_estimates %>% 
