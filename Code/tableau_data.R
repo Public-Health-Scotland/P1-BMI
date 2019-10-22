@@ -65,7 +65,7 @@ hb_res_file <- haven::read_sav(paste0(output_folder, "P1BMIData.zsav")) %>%
   group_by(school_year, year_ending, HB2019, HB_RESIDENCE_DESC, simd, sex) %>%
   summarise_at(vars(N_Valid_Height_Weight:Clin_Obese_SevObese), sum) %>%
   ungroup()
-  
+
 haven::write_sav(hb_res_file, paste0(output_folder, "P1BMI_board_agg.sav"), compress = FALSE)
 
 #Aggregate LA data
@@ -82,8 +82,8 @@ apply_la_year <- function(x, la, school_year_list) {
   x <- x %>%
     if ((CA2019 == la) && (school_year %in% "school_year_list")) {
       mutate(flag = 1)
-      }
-    return(x)
+    }
+  return(x)
 }
 
 #exclude data for years when local authorities have less than 50 records
@@ -115,12 +115,12 @@ all_part_hb_file <- haven::read_sav(paste0(output_folder, "P1BMIData.zsav")) %>%
   mutate(HB2019 = "Total",
          HB_RESIDENCE_DESC = "All participating boards") %>%
   ungroup()
-  
+
 haven::write_sav(all_part_hb_file, paste0(host_folder, "Temp", "P1BMI_Scotland_agg.sav"), compress = FALSE)
 
 p1_bmi_agg_file <- bind_rows(hb_res_file, la_file, all_part_hb_file) %>%
   mutate_all(~replace(., is.na(.), 0))
-  
+
 haven::write_sav(p1_bmi_agg_file, paste0(output_folder, "P1BMI_agg.sav"), compress = FALSE)
 
 #HB donut
@@ -153,7 +153,7 @@ haven::write_sav(donut_la_file, paste0(host_folder, "Temp", "P1BMIData_donuts_Sc
 
 p1_bmi_donut_file <- rbind(donut_hb_res_file, donut_la_file, donut_all_part_hb_file) %>%
   
-haven::write_sav(donut_la_file, paste0(output_folder, "P1BMI_donut_data.sav"), compress = FALSE)
+  haven::write_sav(donut_la_file, paste0(output_folder, "P1BMI_donut_data.sav"), compress = FALSE)
 
 
 # Local Authority coverage data
