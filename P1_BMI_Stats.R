@@ -719,10 +719,12 @@ hb_data <- left_join(hb_data, hb_pop_estimates,
 
 # Confidence intervals (hb)
 # use the function to calculate confidence intervals
+
 calculate_ci(hb_data)
 
 # save as csv file
 write_csv(hb_data, paste0(host_folder, Output, "hb_data.csv"))
+
 
 
 ### Council area analysis
