@@ -40,17 +40,18 @@ if (server_desktop == "server") {
   lookupFolder <-"//Isdsf00d03/cl-out/lookups"
   output_folder <- "//stats/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/Tableau/"
 }
-
-figure_two_data <- read_spss(paste(file.path(output_folder, "P1BMI_board_agg.sav")))
-figure_two_data <- read_spss(paste(file.path(output_folder, "P1BMI_board_agg.sav"))) %>%
-  #subset(select = c("school_year", "HB_RESIDENCE_DESC", "Epi_OverweightObese"))
-  group_by(school_year, HB_RESIDENCE_DESC) %>%
-  summarise(Epi_OverweightObese = sum(Epi_OverweightObese)) %>%
-  ungroup()
+figure_two_data <- read_spss(paste(file.path(output_folder, "P1BMI_agg.sav"))) %>%
+  subset(select = c("school_year","sex","N_Valid_Height_Weight","Epi_Underweight","Epi_OverweightObese")) %>%
+  group_by(school_year,sex) %>%
+  summarise(Epi_OverweightObese = sum(Epi_OverweightObese),Epi_Underweight=sum(Epi_Underweight),N_Valid_Height_Weight=sum(N_Valid_Height_Weight)) %>%
+  ungroup() %>% 
+  mutate(OvOb_Perc=Epi_OverweightObese/N_Valid_Height_Weight*100,Und_Perc=Epi_Underweight/N_Valid_Height_Weight*100) %>%
+  gather(Epi_Category,Percentage,OvOb_Perc:Und_Perc) %>%
+  subset(select=c("school_year","sex","Epi_Category","Percentage")) %>%
+  Perc2=paste(sex,Epi_Category) %>%
 
 figure_two <- ggplot(data = figure_two_data, aes(x = school_year, 
-                                                y = Epi_OverweightObese, 
-                                                fill = HB_RESIDENCE_DESC)) +
+                                                y = Percentage)) +
   geom_bar(position = "dodge", stat = "identity", width = 0.5, show.legend = T) + 
   coord_flip() +
   theme(panel.background = element_blank(),
