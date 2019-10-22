@@ -41,7 +41,7 @@ if (server_desktop == "server") {
   source_folder <- "//PHI_conf/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <- "/conf/linkage/output/lookups"
 } else if (server_desktop == "desktop") {
-  host_folder <- "//PHI_conf/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/"
+  host_folder <- "//stats/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/"
   source_folder <- "//stats/ChildHealthSurveillance/Portfolio/Data"
   lookupFolder <-"//Isdsf00d03/cl-out/lookups"
 }
@@ -60,8 +60,8 @@ bmi_data <- readRDS(paste(file.path(source_folder, "20181008", "School", "school
 
 ## Subset for required variables only
 bmi_data <- subset(bmi_data, select = c(chi, schlyr_exam, id, rev_num, schlgivn, height, weight, bmi,
-                                      centile_h, centile_w, centile_bmi, date_hw, schlyr_hw,
-                                      date_exam, hb_exam, pc_review))
+                                        centile_h, centile_w, centile_bmi, date_hw, schlyr_hw,
+                                        date_exam, hb_exam, pc_review))
 
 ## Sort
 # Restrict to relevant years (var: schlyr_exam)
@@ -70,28 +70,46 @@ bmi_data <- bmi_data %>%
 
 # Restrict to review number 60/61 (var: rev_num)
 bmi_data <- bmi_data %>%
-  filter(rev_num == "60" | rev_num == "61")                                       #688520 obs.
+  filter(rev_num == "60" | rev_num == "61")                                       #688,520 obs.
+
+# Extract blank height/weight valued records
+blank_height_weight <- bmi_data %>%
+  filter(is.na(height) | height == "0000" | is.na(weight) | weight == "00000")     #13,266 obs.
+
+# Remove blank height/weight
+# bmi_data <- bmi_data %>%
+#   filter((!is.na(height) & height != "0000") & (!is.na(weight) & weight != "00000"))   #675,254 obs.
+
 
 # Define single date variable
 bmi_data$daterec <- if_else(bmi_data$date_hw != "00000000", bmi_data$date_hw, bmi_data$date_exam)
 
-# Select only most recent record per CHI and review (var: rev_num)
-bmi_data <- bmi_data %>%
-  group_by(chi, rev_num) %>%
-  slice(which.max(as.Date(daterec, '%Y%m%d')))                                    #667964 obs.
 
-# Extract blank height/weight valued records
-blankData <- bmi_data %>%
-  filter(is.na(height) | height == "0000" | is.na(weight) | weight == "0000")     #(12048 obs.)
-
-# Remove blank height/weight
-bmi_data <- bmi_data %>%
-  filter(!is.na(height) & height != "0000" & !is.na(weight) & weight != "0000")   #655916 obs.
-
-# Select single record per CHI (only using review 61 where there's no review 60 - var:rev_num)
-bmi_data <- bmi_data %>%
-  group_by(chi) %>%
-  slice(which.min(as.numeric(rev_num)))                                           #653587 obs.
+# Select single record per CHI (selecting the most recent record with a valid 
+# height and weight. if no valid height and weight, keep record for the
+# completeness section)
+bmi_data <- bmi_data %>% 
+  arrange(chi, desc(daterec)) %>% 
+  group_by(chi) %>% 
+  
+  # max_height = if there is a valid height somewhere for a chi number this should
+  # return a number greater than 0. Same for max_weight
+  mutate(max_height = max(as.numeric(height)),
+         max_weight = max(as.numeric(weight))) %>% 
+  ungroup() %>% 
+  
+  # flag = highlights records which DO NOT have a valid height OR valid weight
+  # BUT the chi number DOES have a valid height AND weight in another record
+  mutate(flag = case_when(
+           (is.na(height) | height == "0000") & 
+             (is.na(weight) | weight == "00000") &
+             (max_height > 0 & max_weight > 0) ~ 1,
+           TRUE ~ 0)) %>% 
+  filter(flag == 0) %>% 
+  group_by(chi) %>% 
+  mutate(rec_number = row_number()) %>% 
+  ungroup() %>% 
+  filter(rec_number == 1)                                                        # 661,576 obs.
 
 
 ### 3 - Match Postcodes ----
@@ -104,7 +122,7 @@ pcRef <- readRDS(file.path(source_folder, "ReferenceFiles", "postcode_at_review_
 
 # Merge bmi_data with the postcode reference file
 bmi_data <- merge(bmi_data, pcRef[,c("chi", "postcode", "schlyr_exam")],
-                 by = c("chi", "schlyr_exam"), all.x = TRUE, all.y = FALSE)
+                  by = c("chi", "schlyr_exam"), all.x = TRUE, all.y = FALSE)
 
 # Create one postcode variable using pc_review & the postcode reference
 bmi_data$pc_review <- if_else(bmi_data$pc_review == "", bmi_data$postcode, bmi_data$pc_review)
@@ -121,7 +139,7 @@ gc()
 ## Postcode match for 2010/11 on (chiQ)
 # Create variable to show number of quarters from Jan 1990 (J-M = 1)
 bmi_data$examQN <- floor((difftime(as.Date(bmi_data$daterec, '%Y%m%d'), as.Date("19900101", '%Y%m%d'),
-                                  units = "days")/365)*4+1)
+                                   units = "days")/365)*4+1)
 
 # New variable to concatenate chi and examQN
 bmi_data$chiQ <- paste(bmi_data$chi, bmi_data$examQN, sep = "")
@@ -145,7 +163,11 @@ bmi_data <- subset(bmi_data, select = -c(chiQ, examQN, pcodeCHI))
 ## Add CA, HSCP, etc. from lookup
 # Import Reference File
 pcd <- read_rds(file.path(lookupFolder, "Unicode/Geography/Scottish Postcode Directory", 
-                                     "Scottish_Postcode_Directory_2019_2.rds"))
+                          "Scottish_Postcode_Directory_2019_2.rds"))
+
+# remove unnecessary variables
+pcd <- subset(pcd, select = c(pc7, HB2019, HB2019Name, HB2018, CA2019,
+                              CA2019Name, CA2018))
 
 ## Merge data
 bmi_data <- merge(bmi_data, pcd, by = c("pc7"), all.x = TRUE, all.y = FALSE)
@@ -158,15 +180,15 @@ gc()
 ### 4 - Health Board Data Sort ----
 
 ## Recode HB variable to single character cypher
-bmi_data$HB2018 <- bmi_data$HB2018 %>%
+bmi_data$HB2019 <- bmi_data$HB2019 %>%
   recode('S08000015' = 'A',
          'S08000016' = 'B',
          'S08000017' = 'Y',
          'S08000019' = 'V',
          'S08000020' = 'N',
-         'S08000021' = 'G',
+         'S08000031' = 'G',
          'S08000022' = 'H',
-         'S08000023' = 'L',
+         'S08000032' = 'L',
          'S08000024' = 'S',
          'S08000025' = 'R',
          'S08000026' = 'Z',
@@ -174,16 +196,30 @@ bmi_data$HB2018 <- bmi_data$HB2018 %>%
          'S08000029' = 'F',
          'S08000030' = 'T')
 
+# exclude records that have blank HB2019
+# blank_hb2019 <- bmi_data %>%
+#   subset(is.na(HB2019))                                                         #3,580 obs.
+
+# exclude records that have blank HB2019
+bmi_data <- bmi_data %>%
+  subset(!(is.na(HB2019)))                                                        #657,996 obs.
+
+
+# Extract west lothian excluded data
+blank_data_west_lothian <- bmi_data %>%
+  subset(HB2019 == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,217 obs.
+
 ## Exclude cases
 # Exclude West Lothian for 2007/08 unless school attendance is outwith West Lothian
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'S' & CA2018 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))
+  subset(!(HB2019 == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,779 obs.
+
 
 # Exclude Kircaldy schools during 2008/09
 kircaldy <- c('F735L','F736L','F737L','F738L','F739L','F740L','F741L',
               'F743L','F744L','F745L','F746L','F747L','F749L','F882L','F884L')
 bmi_data <- bmi_data %>%
-  subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))
+  subset(!(schlyr_exam == "0809" & schlgivn %in% kircaldy))                       #655,577 obs.
 
 # Remove variable Kircaldy
 rm(kircaldy)
@@ -191,45 +227,35 @@ gc()
 
 # Exclude schlyr 02/03 from Borders data
 bmi_data <- bmi_data %>%
-  subset(!(HB2018 == 'B' & schlyr_exam == '0203'))
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))                                #655,207 obs.
 
 ## Select relevant years function
-apply_hb_year <- function(x = bmi_data, HB, ey, cy = currentYr) {
+apply_hb_year <- function(x, HB, ey, cy) {
+  
   x <- x %>%
-    subset(!(x$HB2018 == HB &
-               as.numeric(schlyr_exam) <= ey &
-               as.numeric(schlyr_exam) >= cy))
+    filter((HB2019 == HB & as.numeric(schlyr_exam) >= ey & 
+              as.numeric(schlyr_exam) <= cy) | HB2019 != HB)
+  
+  return(x)
+  
 }
 
 
-## added by MN
-# SQ commented that in order to run the code below I would need to
-# write a separate function defining HB as a vector
-# hbYearFilter(HB = 'F','L','S', ey = 102)
-# hbYearFilter(HB = 'W', ey = 304)
-# hbYearFilter(HB = 'Y', ey = 405)
-# hbYearFilter(HB = 'V', ey = 506)
-# hbYearFilter(HB = 'G', ey = 607)
-# hbYearFilter(HB = 'A', ey = 708)
-# hbYearFilter(HB = 'H', 'Z', ey = 809)
-# hbYearFilter(HB = 'N', ey = 910)
-# hbYearFilter(HB = 'R', ey = 1011)
-
-
 # code below should work
-apply_hb_year(HB = 'F', ey = 102)
-apply_hb_year(HB = 'L', ey = 102)
-apply_hb_year(HB = 'S', ey = 102)
-apply_hb_year(HB = 'T', ey = 203)
-apply_hb_year(HB = 'W', ey = 304)
-apply_hb_year(HB = 'Y', ey = 405)
-apply_hb_year(HB = 'V', ey = 506)
-apply_hb_year(HB = 'G', ey = 607)
-apply_hb_year(HB = 'A', ey = 708)
-apply_hb_year(HB = 'H', ey = 809)
-apply_hb_year(HB = 'Z', ey = 809)
-apply_hb_year(HB = 'N', ey = 910)
-apply_hb_year(HB = 'R', ey = 1011)  #650,814 obs.
+bmi_data <- bmi_data %>%
+  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr)                              #650,904 obs.
 
 
 ### 5 - Child Data Sort/Analysis ----
@@ -246,13 +272,13 @@ bmi_data <- bmi_data %>%
   mutate(yob = as.integer(substr(chi,5,6)),
          mob = as.integer(substr(chi,3,4)),
          dob = as.integer(substr(chi,1,2)),
-        # create a 4 digit year of birth variable
-        nyob = case_when(yob >= 80 ~ 1900 + yob, 
-                         TRUE ~ 2000 + yob),
-        datedob = ymd(paste(yob,mob,dob)),
-        daterev = ymd(daterec),
-        # Create agemth variable to show child's age in months
-        agemth = lubridate::interval(datedob,daterev) %/% months(1))
+         # create a 4 digit year of birth variable
+         nyob = case_when(yob >= 80 ~ 1900 + yob, 
+                          TRUE ~ 2000 + yob),
+         datedob = ymd(paste(yob,mob,dob)),
+         daterev = ymd(daterec),
+         # Create agemth variable to show child's age in months
+         agemth = lubridate::interval(datedob,daterev) %/% months(1))
 
 # Apply the dictionary from the Dictionary school file
 dictdf <- haven::read_spss(paste(file.path(source_folder, "ReferenceFiles", "Dictionary_School.sav")))
@@ -269,26 +295,24 @@ lookup_relevant <- semi_join(fulldatadic, bmi_data %>% colnames(.) %>% tibble::e
 
 
 # Select children aged 4 years to under 8 years.
-bmi_data <- subset(bmi_data, agemth >=48 & agemth <96) #650,710 obs
+bmi_data <- subset(bmi_data, agemth >=48 & agemth <96)                            #650,685 obs
 
 
 ## Save out a file at this point that can be used to produce the total
 ## number of reviews for HB and CA for the coverage calculations.
 ## This file contains all reviews (with and without valid height and weight)
 ## save as data frame?
-#saveRDS(host_folder, "allReviews.rds")
+saveRDS(bmi_data, paste0(host_folder, "bmi_data_coverage.rds"))
 
 
 
 # Convert the height and weight variables from string to numeric
 bmi_data <- mutate(bmi_data, height = as.numeric(height),
-                  weight = as.numeric(weight))
+                   weight = as.numeric(weight))
 
 # Select only records with a valid (i.e. non-zero) height and weight
 bmi_data <- subset(bmi_data, height != 0)
-bmi_data <- subset(bmi_data, weight != 0) 
-
-#650,043 obs
+bmi_data <- subset(bmi_data, weight != 0)                                         #643,134 obs
 
 # Create variable to show height in metres
 #height in mm, weight in cg???
@@ -302,7 +326,7 @@ bmi_data <- mutate(bmi_data, bmi = weight_kg/(height_m*height_m))
 # Child's age in months will lie between two ages in 
 # in the lookup table. Line below calculates the next 
 # lowest whole month and converts to years.
-bmi_data <- mutate(bmi_data, ageyr = round(1000*trunc(agemth)/12)/1000)
+bmi_data <- mutate(bmi_data, ageyr = round(1000*trunc(agemth)/12)/1000)           #643,134 obs
 
 
 
@@ -317,15 +341,15 @@ grd <- readRDS(file.path(source_folder, "ReferenceFiles",
 # Merge data
 bmi_data <- bmi_data %>%
   left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
-# Rename the Growth Reference variables for the lowest whole month
-# converted to years (LO)
+  # Rename the Growth Reference variables for the lowest whole month
+  # converted to years (LO)
   dplyr::rename(LMLO_b = bmi_male_l, MMLO_b = bmi_male_m, SMLO_b = bmi_male_s,
                 LFLO_b = bmi_female_l,MFLO_b = bmi_female_m, SFLO_b = bmi_female_s,
                 LMLO_h = height_male_l, MMLO_h = height_male_m, SMLO_h = height_male_s,
                 LFLO_h = height_female_l, MFLO_h = height_female_m, SFLO_h = height_female_s,
                 LMLO_w = weight_male_l, MMLO_w = weight_male_m, SMLO_w = weight_male_s,
                 LFLO_w = weight_female_l, MFLO_w = weight_female_m, SFLO_w = weight_female_s,
-                agelo = ageyr)
+                agelo = ageyr)                                                                 #643,134 obs
 
 
 # Child's age in months will lie between two ages in 
@@ -333,8 +357,8 @@ bmi_data <- bmi_data %>%
 # highest whole month and converts to years.
 bmi_data <- bmi_data %>%
   mutate(ageyr = round(1000*(trunc(agemth)+1)/12)/1000) %>%
-# Merge data
-left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
+  # Merge data
+  left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
   # Rename the Growth Reference variables for the highest whole month
   # converted to years (HI)
   dplyr::rename(LMHI_b = bmi_male_l, MMHI_b = bmi_male_m, SMHI_b = bmi_male_s,
@@ -343,7 +367,7 @@ left_join(grd, by = c("ageyr"), all.x = TRUE, all.y = TRUE) %>%
                 LFHI_h = height_female_l, MFHI_h = height_female_m, SFHI_h = height_female_s,
                 LMHI_w = weight_male_l, MMHI_w = weight_male_m, SMHI_w = weight_male_s,
                 LFHI_w = weight_female_l, MFHI_w = weight_female_m, SFHI_w = weight_female_s,
-                agehi = ageyr)
+                agehi = ageyr)                                                                 #643,134 obs
 
 # Calculate age in years to 2 decimal places for BMI, Height and Weight.
 bmi_data <- bmi_data %>%
@@ -352,7 +376,7 @@ bmi_data <- bmi_data %>%
 # Interpolation - BMI
 bmi_data <- bmi_data %>%
   mutate(LINT_b = case_when(sex == "M" ~
-                            (LMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LMHI_b-LMLO_b)),
+                              (LMHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LMHI_b-LMLO_b)),
                             sex == "F" ~
                               (LFHI_b-((agehi-(ageyrs2decimal))/(agehi-agelo))*(LFHI_b-LFLO_b)),
                             TRUE ~ 0),
@@ -401,7 +425,7 @@ bmi_data <- bmi_data %>%
                              (SMHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SMHI_w-SMLO_w)),
                            sex == "F" ~
                              (SFHI_w-((agehi-(ageyrs2decimal))/(agehi-agelo))*(SFHI_w-SFLO_w)),
-                           TRUE ~ 0))
+                           TRUE ~ 0))                                                            #643,134 obs
 
 
 # Calculate standard deviation scores
@@ -427,14 +451,13 @@ bmi_data <- bmi_data %>%
          #compute sds to 2 decimal places.
          sds_w=round(sds2_w,2),
          # Calculate centiles.
-         cent_w=100 * pnorm(sds_w, mean = 0, sd = 1))
+         cent_w=100 * pnorm(sds_w, mean = 0, sd = 1))                             #643,134 obs
 
 saveRDS(bmi_data, paste0(host_folder, "RAPtemp_all_reviews.rds"))
 bmi_data <- readRDS(paste0(host_folder, "RAPtemp_all_reviews.rds"))
 # select out those outwith the range deemed to be real.
 bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) & 
-                     (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))
-#649,529 obs
+                     (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))     #642,643 obs
 
 
 # Create epidemiological and clinical thresholds
@@ -458,62 +481,77 @@ bmi_data <- bmi_data %>%
          clin_cent_grp7 = ifelse(sds_b >= 2, 1, 0),
          tot = 1)
 
-#this can't be piped??
-arrange(bmi_data, pc7)
 
-#saveRDS(host_folder, "BMI_data_0102_1718.rds")
+saveRDS(bmi_data, paste0(host_folder, "temp_all_reviews_2.rds"))                  #642,643 obs.
+bmi_data <- readRDS(paste0(host_folder, "temp_all_reviews_2.rds"))
 
 # read in deprivation lookup. 
 simd_2016 <- readRDS(paste0(
   lookupFolder, "/Unicode/Deprivation/postcode_2019_2_simd2016.rds")) %>%
-  select(pc7, simd2016_sc_quintile)
+  select(pc7, simd2016_sc_quintile) %>% 
+  rename(simd = simd2016_sc_quintile) %>% 
+  mutate(year = "simd_2016")
 
 simd_2012 <- readRDS(paste0(
   lookupFolder, "/Unicode/Deprivation/postcode_2016_1_simd2012.rds")) %>%
-  select(pc7, simd2012_sc_quintile)
+  select(pc7, simd2012_sc_quintile) %>% 
+  rename(simd = simd2012_sc_quintile) %>% 
+  mutate(year = "simd_2012")
 
 simd_2009 <- readRDS(paste0(
   lookupFolder, "/Unicode/Deprivation/", "postcode_2012_2_simd2009v2.rds")) %>%
-  select(pc7, simd2009v2_sc_quintile)
+  select(pc7, simd2009v2_sc_quintile) %>% 
+  rename(simd = simd2009v2_sc_quintile) %>% 
+  mutate(year = "simd_2009")
 
 simd_2006 <- readRDS(paste0(
   lookupFolder, "/Unicode/Deprivation/", "postcode_2009_2_simd2006.rds")) %>%
-  select(pc7, simd2006_sc_quintile)
+  select(pc7, simd2006_sc_quintile) %>% 
+  rename(simd = simd2006_sc_quintile) %>% 
+  mutate(year = "simd_2006")
 
 simd_2004 <- readRDS(paste0(
   lookupFolder, "/Unicode/Deprivation/", "postcode_2006_2_simd2004.rds")) %>%
-  select(pc7, simd2004_sc_quintile)
+  select(pc7, simd2004_sc_quintile) %>% 
+  rename(simd = simd2004_sc_quintile) %>% 
+  mutate(year = "simd_2004")
 
-# Recode simd 2004 & 2006 so all go from 1=most to 5=least - this was
-# required for creating allsimdyear/allsimdfinyear
+# Recode simd 2004 & 2006 to reverse the quintiles (i.e 1=5, 2=4, 4=2, 5=1)
 # Still to change labels
 rescale <- function(x_i){
   6-x_i
 }
 
-all_simd <- list(simd_2004, simd_2006, simd_2009, simd_2012, simd_2016) %>%
-  Reduce(function(dtf1,dtf2) left_join(dtf1,dtf2,by="pc7"), .)
+all_simd <- bind_rows(simd_2004, simd_2006, simd_2009, simd_2012,
+                      simd_2016) %>% 
+  spread(year, simd)
 
-#to fix - not being applied???
-allsimd <- all_simd %>%
-  mutate(simd2004_sc_quintile <- sapply(simd2004_sc_quintile, rescale),
-         simd2006_sc_quintile <- sapply(simd2006_sc_quintile, rescale))
+all_simd <- all_simd %>%
+  mutate(simd_2004 = sapply(simd_2004, rescale),
+         simd_2006 = sapply(simd_2006, rescale))
 
 #Assign the appropriate SIMD value to a record depending on the year
 bmi_data <- bmi_data %>%
-  merge(all_simd, by = "pc7") %>%
+  left_join(all_simd, by = "pc7") %>%
   mutate(simd = case_when(
     schlyr_exam %in% c("1415", "1516", "1617", "1718", "1819") 
-    ~ simd2016_sc_quintile,
+    ~ simd_2016,
     schlyr_exam %in% c("1011", "1112", "1213", "1314") 
-    ~ simd2012_sc_quintile,
+    ~ simd_2012,
     schlyr_exam %in% c("0708", "0809", "0910") 
-    ~ simd2009v2_sc_quintile,
-    schlyr_exam %in% c("0405", "0607", "1213") 
-    ~ simd2006_sc_quintile,
+    ~ simd_2009,
+    schlyr_exam %in% c("0405", "0506", "0607") 
+    ~ simd_2006,
     schlyr_exam %in% c("0102", "0203", "0304") 
-    ~ simd2004_sc_quintile
-  ))
+    ~ simd_2004
+  ))                                                                              #642,643 obs.
+
+# create data frame for records with blank simd
+blank_simd <- bmi_data %>%
+  subset(is.na(simd))                                                             #96 obs.
+
+
+
 
 # No longer need the old ca code. Was only used to generate table key. 
 # use current ca code.
@@ -529,7 +567,7 @@ bmi_data <- bmi_data %>%
 #                       "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
 #                       "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
 #                       "31", "32")}
-       
+
 #mutate(council_area_name <- sapply(council_area_name, rescale)), 
 bmi_data <- mutate(bmi_data, ca_name = case_when(
   substr(CA2019, 8, 9) == "33" ~ "Aberdeen City",
@@ -547,54 +585,47 @@ bmi_data <- mutate(bmi_data, ca_name = case_when(
   substr(CA2019, 8, 9) == "11" ~ "East Renfrewshire",
   substr(CA2019, 8, 9) == "36" ~ "City of Edinburgh",
   substr(CA2019, 8, 9) == "14" ~ "Falkirk",
-  substr(CA2019, 8, 9) == "46" ~ "Fife",
-  substr(CA2019, 8, 9) == "47" ~ "Glasgow City",
+  substr(CA2019, 8, 9) == "47" ~ "Fife",
+  substr(CA2019, 8, 9) == "49" ~ "Glasgow City",
   substr(CA2019, 8, 9) == "17" ~ "Highland",
   substr(CA2019, 8, 9) == "18" ~ "Inverclyde",
   substr(CA2019, 8, 9) == "19" ~ "Midlothian",
   substr(CA2019, 8, 9) == "20" ~ "Moray",
   substr(CA2019, 8, 9) == "21" ~ "North Ayrshire",
-  substr(CA2019, 8, 9) == "44" ~ "North Lanarkshire",
-  substr(CA2019, 8, 9) == "43" ~ "Orkney Islands",
+  substr(CA2019, 8, 9) == "50" ~ "North Lanarkshire",
+  substr(CA2019, 8, 9) == "23" ~ "Orkney Islands",
   substr(CA2019, 8, 9) == "48" ~ "Perth & Kinross",
   substr(CA2019, 8, 9) == "38" ~ "Renfrewshire",
   substr(CA2019, 8, 9) == "27" ~ "Shetland Islands",
   substr(CA2019, 8, 9) == "28" ~ "South Ayrshire",
   substr(CA2019, 8, 9) == "29" ~ "South Lanarkshire",
   substr(CA2019, 8, 9) == "30" ~ "Stirling",
-  substr(CA2019, 8, 9) == "31" ~ "West Lothian",
-  substr(CA2019, 8, 9) == "32" ~ "Comhairle nan Eilean Siar",
+  substr(CA2019, 8, 9) == "40" ~ "West Lothian",
+  substr(CA2019, 8, 9) == "13" ~ "Comhairle nan Eilean Siar",
   TRUE ~ "Other"))
 
 bmi_data <- mutate(bmi_data, carea = paste(substr(CA2019, 8, 9),ca_name))
 
 
-arrange(bmi_data, chi)
-
-
 bmi_basefile <- bmi_data %>%
   subset(select = c(chi, id, HB2019, CA2019, carea, sex, height, weight, daterec, 
-                      schlyr_exam, schlgivn, rev_num, agemth, nyob, mob, dob, pc7,
-                      simd2016_sc_quintile, simd2012_sc_quintile, 
-                      simd2009v2_sc_quintile, simd2006_sc_quintile, 
-                      simd2004_sc_quintile, simd, sex, height_m, weight_kg, bmi, 
-                      tot, cent_grp1, cent_grp2, cent_grp3, cent_grp4, cent_grp5, 
-                      clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, 
-                      clin_cent_grp5, clin_cent_grp6, clin_cent_grp7))
+                    schlyr_exam, schlgivn, rev_num, agemth, nyob, mob, dob, pc7,
+                    simd_2016, simd_2012, simd_2009, simd_2006, 
+                    simd_2004, simd, sex, height_m, weight_kg, bmi, 
+                    tot, cent_grp1, cent_grp2, cent_grp3, cent_grp4, cent_grp5, 
+                    clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, 
+                    clin_cent_grp5, clin_cent_grp6, clin_cent_grp7))
 
 # This file contains data for school years 2001/02 to 2017/18 and should 
 # be used for information requests etc. so that any figures produced match 
 # those published in financial year 2017/18.
-saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))
-
-#614,752 obs.
+saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))              #642,643 obs.
 
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
 
 
 ### Health board analysis
 
-# SQ
 # create population file from the GRO mid year population estimates
 # of five year olds in each HB and for all participating boards
 hb_pop_estimates <- readRDS(paste0(
@@ -603,7 +634,7 @@ hb_pop_estimates <- readRDS(paste0(
 
 hb_pop_estimates <- hb_pop_estimates %>% 
   filter(age == 5) %>%
-  filter(year >= 2000 & year <=2018) %>% 
+  filter(year >= 2001 & year <=2017) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
                                  year == 2003 ~ "0304",
@@ -620,71 +651,79 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718",
-                                 year == 2018 ~ "1819")) %>% 
-  # do we need to pipe to functions?
-  # call the function for creating HB cypher
-  apply_hb_cypher()
-  # do we pipe after functions?
+                                 year == 2017 ~ "1718"))  
+
+## Recode HB variable to single character cypher
+hb_pop_estimates$HB2019 <- hb_pop_estimates$HB2019 %>%
+  recode('S08000015' = 'A',
+         'S08000016' = 'B',
+         'S08000017' = 'Y',
+         'S08000019' = 'V',
+         'S08000020' = 'N',
+         'S08000031' = 'G',
+         'S08000022' = 'H',
+         'S08000032' = 'L',
+         'S08000024' = 'S',
+         'S08000025' = 'R',
+         'S08000026' = 'Z',
+         'S08000028' = 'W',
+         'S08000029' = 'F',
+         'S08000030' = 'T') 
+
+# Exclude schlyr 02/03 from Borders data
+hb_pop_estimates <- hb_pop_estimates %>%
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
+
+# call the function for creating HB cypher
+### apply_hb_cypher(hb_pop_estimates) # %>%
 
 # call the function for selecing the relevant year for each board
-apply_hb_year(hb_pop_estimates, HB = 'F', ey = 102)
-apply_hb_year(hb_pop_estimates, HB = 'L', ey = 102)
-apply_hb_year(hb_pop_estimates, HB = 'S', ey = 102)
-apply_hb_year(hb_pop_estimates, HB = 'T', ey = 203)
-apply_hb_year(hb_pop_estimates, HB = 'W', ey = 304)
-apply_hb_year(hb_pop_estimates, HB = 'Y', ey = 405)
-apply_hb_year(hb_pop_estimates, HB = 'V', ey = 506)
-apply_hb_year(hb_pop_estimates, HB = 'G', ey = 607)
-apply_hb_year(hb_pop_estimates, HB = 'A', ey = 708)
-apply_hb_year(hb_pop_estimates, HB = 'H', ey = 809)
-apply_hb_year(hb_pop_estimates, HB = 'Z', ey = 809)
-apply_hb_year(hb_pop_estimates, HB = 'N', ey = 910)
-apply_hb_year(hb_pop_estimates, HB = 'R', ey = 1011)
-
+  hb_pop_estimates <- hb_pop_estimates %>%
+  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr) 
 
 # create totals for individual hb and all 
 # participating boards (for hb_pop_estimates)
 # Board level
 hb_pop_estimates <- rbind(hb_pop_estimates %>% 
                             group_by(HB2019, schlyr_exam)%>%
-                            summarise(pop = sum(pop)) %>% ungroup,
-# Scotland level (all participating boards)
+                            summarise(pop = sum(pop)) %>% ungroup(),
+                          # Scotland level (all participating boards)
                           hb_pop_estimates %>% group_by(schlyr_exam) %>%
                             summarise(pop = sum(pop)) %>%
-                            mutate(HB2019 = "Total") %>% ungroup)
-
+                            mutate(HB2019 = "Total") %>% ungroup())
 
 # create totals for individual hb and all participating boards (for hb_data)
 # Board level
 hb_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
-                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup,
-# Scotland level (all participating boards)
+                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup(),
+                 # Scotland level (all participating boards)
                  bmi_basefile %>% group_by(schlyr_exam) %>% 
                    summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                   mutate(HB2019 = "Total") %>% ungroup)
-
-# JV helped to fix the above rbind, script below still useful to test
-# by HB and all participating boards separately
-#test <- bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
-#  summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup
-#test1 <- bmi_basefile %>% group_by(schlyr_exam) %>% 
-#  summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-#  mutate(HB2019 = "Total") %>% ungroup
-
-#test2 <- rbind(test, test1)
+                   mutate(HB2019 = "Total") %>% ungroup())
 
 # Match hb data to hb population estimates
 hb_data <- left_join(hb_data, hb_pop_estimates, 
                      by = c("HB2019", "schlyr_exam"))
 
-
 # Confidence intervals (hb)
 # use the function to calculate confidence intervals
-hb_data <- calculate_ci(hb_data)
 
+calculate_ci(hb_data)
 
-
+# save as csv file
+write_csv(hb_data, paste0(host_folder, Output, "hb_data.csv"))
 
 
 
@@ -692,13 +731,43 @@ hb_data <- calculate_ci(hb_data)
 
 # create population file from the GRO mid year population estimates
 # of five year olds in each ca 
-ca_pop_estimates <- 
+ca_pop_estimates <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/CA2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop)
+
+ca_pop_estimates <- ca_pop_estimates %>% 
+  filter(age == 5) %>%
+  filter(year >= 2001 & year <=2017) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314",
+                                 year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718"))  
+
+# create totals for individual council areas (for ca_pop_estimates)
+# council area level
+ca_pop_estimates <- rbind(ca_pop_estimates %>% 
+                            group_by(CA2019, schlyr_exam)%>%
+                            summarise(pop = sum(pop)) %>% ungroup())
 
 
+# create totals for individual hb and all participating boards (for ca_data)
+# council area level
+ca_data <- rbind(bmi_basefile %>% group_by(CA2019, schlyr_exam) %>%
+                   summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
-# create totals for individual council areas
-ca_data <- rbind(bmi_basefile %>% group_by(carea, schlyr_exam) %>%
-                     summarise_at(vars(tot:clin_cent_grp7), sum))
 
 # Select council areas with a valid population. Some council areas 
 # may have small numbers for years that they did not participate.
@@ -706,49 +775,313 @@ ca_data <- subset(ca_data, tot >50)
 
 # Match ca data to ca population estimates
 ca_data <- left_join(ca_data, ca_pop_estimates, 
-                     by = c(carea, schlyr_exam))
+                     by = c("CA2019", "schlyr_exam"))
 
 
 # Confidence intervals (ca)
 # use the function to calculate confidence intervals
+calculate_ci(ca_data)
 
 
-
-
-
-
+# save as csv file
+write_csv(ca_data, paste0(host_folder, Output, "ca_data.csv"))
 
 
 ### Gender analysis
 
 # create population file from the GRO mid year population estimates
 # of five year olds by gender.
-gender_pop_estimates <- 
+gender_pop_estimates <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop, sex = Sex)
+
+gender_pop_estimates <- gender_pop_estimates %>% 
+  filter(age == 5) %>%
+  filter(year >= 2001 & year <=2017) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314",
+                                 year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718"))  
+
+# Exclude schlyr 02/03 from Borders data
+hb_pop_estimates <- hb_pop_estimates %>%
+  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
+
+# call the function for creating HB cypher
+# apply_hb_cypher(hb_pop_estimates) 
+
+# call the function for selecing the relevant year for each board
+hb_pop_estimates <- hb_pop_estimates %>%
+  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr) 
+
+# create totals for male and female (for gender_pop_estimates)
+# all participating boards
+gender_pop_estimates <- rbind(gender_pop_estimates %>% 
+                                group_by(sex, schlyr_exam)%>%
+                                summarise(pop = sum(pop)) %>% ungroup(),
+                              # totals by year (all participating boards)
+                              gender_pop_estimates %>% group_by(schlyr_exam) %>%
+                                summarise(pop = sum(pop)) %>%
+                                mutate(sex = "Total") %>% ungroup())
 
 
-
-# create totals for individual hb and all participating boards 
-# by gender
+# create totals for male and female (for gender_data)
+# all participating boards
 gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
-                   summarise_at(vars(tot:clin_cent_grp7), sum),
-                 # Scotland level (all participating boards)
-                 bmi_basefile %>% group_by(schlyr_exam) %>% 
-                   summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                   mutate(HB2018 = "Total")) %>% ungroup()
+                       summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup(),
+                     # totals by year (all participating boards)
+                     bmi_basefile %>% group_by(schlyr_exam) %>% 
+                       summarise_at(vars(tot:clin_cent_grp7), sum) %>%
+                       mutate(sex = "Total") %>% ungroup())
 
-# Match hb data to hb population estimates
-gender_data <- left_join(gender_data, hb_pop_estimates, 
-                     by = c(sex, schlyr_exam))
+
+# Match gender data to gender population estimates
+gender_data <- left_join(gender_data, gender_pop_estimates, 
+                         by = c("sex", "schlyr_exam"))
 
 
 # Confidence intervals (gender)
 # use the function to calculate confidence intervals
+calculate_ci(gender_data)
+
+
+# save as csv file
+write_csv(gender_data, paste0(host_folder, Output, "gender_data.csv"))
 
 
 
+### simd analysis
+
+# create population file from the GRO mid year population estimates
+# of five year olds by simd (for years 01/02 to 13/14)
+simd_pop_estimates_1 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/DataZone2001_pop_est_2001_2014.rds")) %>%
+  select(Year, DataZone2001, SEX, AGE5, simd2004_sc_quintile, 
+         simd2006_sc_quintile, simd2009v2_sc_quintile, simd2012_sc_quintile)
+
+simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
+  rename(year = Year, pop = AGE5, sex = SEX) %>%
+  filter(year >= 2001 & year <=2013) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314"))
+
+# Recode simd 2004 & 2006 so all go from 1=most to 5=least
+### still to add this section (see previous work on SIMD)
+
+# assign the appropriate SIMD value to a record depending on the year
+simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
+  mutate(simd = case_when(
+    schlyr_exam %in% c("1011", "1112", "1213", "1314") 
+    ~ simd2012_sc_quintile,
+    schlyr_exam %in% c("0708", "0809", "0910") 
+    ~ simd2009v2_sc_quintile,
+    schlyr_exam %in% c("0405", "0506", "0607") 
+    ~ simd2006_sc_quintile,
+    schlyr_exam %in% c("0102", "0203", "0304") 
+    ~ simd2004_sc_quintile
+  ))
+
+# create totals for simd_population_estimates_1
+# all participating boards
+simd_pop_estimates_1 <- rbind(simd_pop_estimates_1 %>% 
+                                group_by(simd, schlyr_exam)%>%
+                                summarise(pop = sum(pop)) %>% ungroup())
+
+
+# create population file from the GRO mid year population estimates
+# of five year olds by simd (for years 14/15 to current year)
+simd_pop_estimates_2 <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/DataZone2011_pop_est_2011_2018.rds")) %>%
+  select(year, datazone2011, sex, age5, simd2016_sc_quintile)
+
+simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
+  rename(pop = age5) %>%
+  filter(year >= 2014 & year <=2017) %>% 
+  mutate(schlyr_exam = case_when(year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718"))
+
+# assign the appropriate SIMD value to a record depending on the year
+simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
+  mutate(simd = case_when(
+    schlyr_exam %in% c("1415", "1516", "1617", "1718") 
+    ~ simd2016_sc_quintile
+  ))
+
+# create totals for simd_population_estimates_2
+# all participating boards
+simd_pop_estimates_2 <- rbind(simd_pop_estimates_2 %>% 
+                                group_by(simd, schlyr_exam)%>%
+                                summarise(pop = sum(pop)) %>% ungroup())
+
+
+# Match the two simd populations files together
+simd_pop_estimates <- left_join(simd_pop_estimates_1, simd_pop_estimates_2,
+                                by = c("simd" , "schlyr_exam"))
 
 
 
+# create totals for simd (simd_data)
+# all participating boards
+simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
+                     summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
+
+# add simd_data to simd_population_estimates
+simd_data <- left_join(simd_data, simd_pop_estimates, 
+                       by = c("simd", "schlyr_exam"))
+
+
+# Confidence intervals (simd)
+# use the function to calculate confidence intervals
+calculate_ci(simd_data)
+
+
+# save as csv file
+write_csv(simd_data, paste0(host_folder, Output, "simd_data.csv"))
+
+
+### data completeness
+
+# calculate scotland population estimates
+sco_pop_estimates <- readRDS(paste0(
+  lookupFolder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop)
+
+sco_pop_estimates <- sco_pop_estimates %>% 
+  filter(age == 5) %>%
+  filter(year >= 2001 & year <=2017) %>% 
+  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
+                                 year == 2002 ~ "0203",
+                                 year == 2003 ~ "0304",
+                                 year == 2004 ~ "0405",
+                                 year == 2005 ~ "0506",
+                                 year == 2006 ~ "0607",
+                                 year == 2007 ~ "0708",
+                                 year == 2008 ~ "0809",
+                                 year == 2009 ~ "0910",
+                                 year == 2010 ~ "1011",
+                                 year == 2011 ~ "1112",
+                                 year == 2012 ~ "1213",
+                                 year == 2013 ~ "1314",
+                                 year == 2014 ~ "1415",
+                                 year == 2015 ~ "1516",
+                                 year == 2016 ~ "1617",
+                                 year == 2017 ~ "1718"))  
+
+
+# Scotland level population estimates by year
+sco_pop_estimates <- rbind(sco_pop_estimates %>% 
+                             group_by(schlyr_exam) %>%
+                             summarise(pop = sum(pop)) %>%
+                             mutate(HB2019 = "Total") %>% ungroup())
+
+# save as excel file
+write_csv(sco_pop_estimates, paste0(host_folder, Output,
+                                       "scotland_pop.csv"))
+
+
+
+# board level completeness
+bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
+
+# create totals for the number of records with and without a valid height and 
+# weight for individual hb and all participating boards (for bmi_data_coverage)
+# create a variable for the total number of reviews
+bmi_data_coverage <- bmi_data_coverage %>% mutate(count = 1)
+# board level
+hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
+                         summarise(total_reviews = sum(count))  %>% ungroup(),
+# Scotland level (all participating boards)
+                       bmi_data_coverage %>% group_by(schlyr_exam) %>% 
+                         summarise(total_reviews = sum(count)) %>%
+                         mutate(HB2019 = "Total") %>% ungroup())
+
+
+# create totals for the number of records with a valid height and weight
+# for individual hb and all participating boards (for bmi_basefile)
+# create a variable for the total number of valid reviews
+bmi_basefile <- bmi_basefile %>% mutate(count = 1) 
+# board level  
+hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count))  %>% ungroup(),
+# Scotland level (all participating boards)
+                             bmi_basefile %>% group_by(schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count)) %>%
+                               mutate(HB2019 = "Total") %>% ungroup())
+
+# Add all health board files (population, all P1 reviews and
+# P1 reviews with valid h&w measurements)
+hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data, 
+                                  by = c("HB2019", "schlyr_exam")) %>% 
+        full_join(hb_valid_p1rev_data, by = c("HB2019", "schlyr_exam"))
+
+# save as excel file
+write_csv(hb_completeness_data, paste0(host_folder, Output,
+                                       "ca_completeness_data.csv"))
+
+
+
+# council area completeness
+# create totals for the number of records with and without a valid height and 
+# weight for individual council area (for bmi_data_coverage)
+ca_p1rev_data <- rbind(bmi_data_coverage %>% 
+                         group_by(CA2019, schlyr_exam)%>%
+                         summarise(total_reviews = sum(count)) %>% ungroup())
+
+# create totals for the number of records with a valid height and weight
+# for individual council area (for bmi_basefile)
+ca_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(CA2019, schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count))  %>% 
+                               ungroup())
+
+# Add all council area files (population, all P1 reviews and
+# P1 reviews with valid h&w measurements)
+ca_completeness_data <- full_join(ca_pop_estimates, ca_p1rev_data, 
+                                  by = c("CA2019", "schlyr_exam")) %>% 
+  full_join(ca_valid_p1rev_data, by = c("CA2019", "schlyr_exam")) %>% 
+subset(total_reviews >50)
+
+
+# save as csv file
+write_csv(ca_completeness_data, paste0(host_folder, Output,
+                                       "ca_completeness_data.csv"))
 
 
 
