@@ -32,7 +32,6 @@ library(here)
 library(readr)
 library(tidyr)
 
-plat_filepath <- 
 
 source(here("Code", "functions.R"))
 
@@ -185,39 +184,40 @@ gc()
 ### 4 - Health Board Data Sort ----
 
 ## Recode HB variable to single character cypher
-bmi_data$HB2019 <- bmi_data$HB2019 %>%
-  recode('S08000015' = 'A',
-         'S08000016' = 'B',
-         'S08000017' = 'Y',
-         'S08000019' = 'V',
-         'S08000020' = 'N',
-         'S08000031' = 'G',
-         'S08000022' = 'H',
-         'S08000032' = 'L',
-         'S08000024' = 'S',
-         'S08000025' = 'R',
-         'S08000026' = 'Z',
-         'S08000028' = 'W',
-         'S08000029' = 'F',
-         'S08000030' = 'T')
+# create a new variable in order to keep the HB codes
+bmi_data <- bmi_data %>% 
+mutate(hb2019_cypher = case_when(HB2019 == "S08000015" ~ "A",
+                             HB2019 == 'S08000016' ~ 'B',
+                             HB2019 == 'S08000017' ~ 'Y',
+                             HB2019 == 'S08000019' ~ 'V',
+                             HB2019 == 'S08000020' ~ 'N',
+                             HB2019 == 'S08000031' ~ 'G',
+                             HB2019 == 'S08000022' ~ 'H',
+                             HB2019 == 'S08000032' ~ 'L',
+                             HB2019 == 'S08000024' ~ 'S',
+                             HB2019 == 'S08000025' ~ 'R',
+                             HB2019 == 'S08000026' ~ 'Z',
+                             HB2019 == 'S08000028' ~ 'W',
+                             HB2019 == 'S08000029' ~ 'F',
+                             HB2019 == 'S08000030' ~ 'T'))
 
-# exclude records that have blank HB2019
-# blank_hb2019 <- bmi_data %>%
-#   subset(is.na(HB2019))                                                         #3,580 obs.
+# exclude records that have blank hb2019_cypher
+# blank_hb2019_cypher <- bmi_data %>%
+#   subset(is.na(hb2019_cypher))                                                      #3,580 obs.
 
-# exclude records that have blank HB2019
+# exclude records that have blank hb2019_cypher
 bmi_data <- bmi_data %>%
-  subset(!(is.na(HB2019)))                                                        #657,996 obs.
+  subset(!(is.na(hb2019_cypher)))                                                        #657,996 obs.
 
 
 # Extract west lothian excluded data
 blank_data_west_lothian <- bmi_data %>%
-  subset(HB2019 == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,217 obs.
+  subset(hb2019_cypher == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708"))  #2,217 obs.
 
 ## Exclude cases
 # Exclude West Lothian for 2007/08 unless school attendance is outwith West Lothian
 bmi_data <- bmi_data %>%
-  subset(!(HB2019 == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,779 obs.
+  subset(!(hb2019_cypher == 'S' & CA2019 == 'S12000040' & (schlyr_exam == "0607" | schlyr_exam == "0708")))  # 655,779 obs.
 
 
 # Exclude Kircaldy schools during 2008/09
@@ -232,14 +232,14 @@ gc()
 
 # Exclude schlyr 02/03 from Borders data
 bmi_data <- bmi_data %>%
-  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))                                #655,207 obs.
+  subset(!(hb2019_cypher == 'B' & schlyr_exam == '0203'))                                #655,207 obs.
 
 ## Select relevant years function
 apply_hb_year <- function(x, HB, ey, cy) {
   
   x <- x %>%
-    filter((HB2019 == HB & as.numeric(schlyr_exam) >= ey & 
-              as.numeric(schlyr_exam) <= cy) | HB2019 != HB)
+    filter((hb2019_cypher == HB & as.numeric(schlyr_exam) >= ey & 
+              as.numeric(schlyr_exam) <= cy) | hb2019_cypher != HB)
   
   return(x)
   
@@ -556,64 +556,15 @@ blank_simd <- bmi_data %>%
   subset(is.na(simd))                                                             #96 obs.
 
 
-
-
-# No longer need the old ca code. Was only used to generate table key. 
-# use current ca code.
-# Councils - create the old CA with codes 01-32 ; the new codes are 
-# made unique by the last 2 chars so use them   .
-# mutate(bmi_data, ca = substr(CA2019, 8, 9))
-# bmi_data <- bmi_data %>%       
-#   for (ca in c("33", "34", "41", "35", "26", "05", "39", "06", "42", "08", 
-#                       "45", "10", "11", "36", "14", "47", "46", "17", "18", "19", 
-#                       "20", "21", "44", "23", "48", "38", "27", "28", "29", "30", 
-#                       "40", "13")) {
-#     ca <-  c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", 
-#                       "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", 
-#                       "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", 
-#                       "31", "32")}
-
-#mutate(council_area_name <- sapply(council_area_name, rescale)), 
-bmi_data <- mutate(bmi_data, ca_name = case_when(
-  substr(CA2019, 8, 9) == "33" ~ "Aberdeen City",
-  substr(CA2019, 8, 9) == "34" ~ "Aberdeenshire",
-  substr(CA2019, 8, 9) == "41" ~ "Angus",
-  substr(CA2019, 8, 9) == "35" ~ "Argyll & Bute",
-  substr(CA2019, 8, 9) == "26" ~ "Scottish Borders",
-  substr(CA2019, 8, 9) == "05" ~ "Clackmannanshire",
-  substr(CA2019, 8, 9) == "39" ~ "West Dunbartonshire",
-  substr(CA2019, 8, 9) == "06" ~ "Dumfries & Galloway",
-  substr(CA2019, 8, 9) == "42" ~ "Dundee City",
-  substr(CA2019, 8, 9) == "08" ~ "East Ayrshire",
-  substr(CA2019, 8, 9) == "45" ~ "East Dunbartonshire",
-  substr(CA2019, 8, 9) == "10" ~ "East Lothian",
-  substr(CA2019, 8, 9) == "11" ~ "East Renfrewshire",
-  substr(CA2019, 8, 9) == "36" ~ "City of Edinburgh",
-  substr(CA2019, 8, 9) == "14" ~ "Falkirk",
-  substr(CA2019, 8, 9) == "47" ~ "Fife",
-  substr(CA2019, 8, 9) == "49" ~ "Glasgow City",
-  substr(CA2019, 8, 9) == "17" ~ "Highland",
-  substr(CA2019, 8, 9) == "18" ~ "Inverclyde",
-  substr(CA2019, 8, 9) == "19" ~ "Midlothian",
-  substr(CA2019, 8, 9) == "20" ~ "Moray",
-  substr(CA2019, 8, 9) == "21" ~ "North Ayrshire",
-  substr(CA2019, 8, 9) == "50" ~ "North Lanarkshire",
-  substr(CA2019, 8, 9) == "23" ~ "Orkney Islands",
-  substr(CA2019, 8, 9) == "48" ~ "Perth & Kinross",
-  substr(CA2019, 8, 9) == "38" ~ "Renfrewshire",
-  substr(CA2019, 8, 9) == "27" ~ "Shetland Islands",
-  substr(CA2019, 8, 9) == "28" ~ "South Ayrshire",
-  substr(CA2019, 8, 9) == "29" ~ "South Lanarkshire",
-  substr(CA2019, 8, 9) == "30" ~ "Stirling",
-  substr(CA2019, 8, 9) == "40" ~ "West Lothian",
-  substr(CA2019, 8, 9) == "13" ~ "Comhairle nan Eilean Siar",
-  TRUE ~ "Other"))
-
-bmi_data <- mutate(bmi_data, carea = paste(substr(CA2019, 8, 9),ca_name))
+### not sure this is doing what we want it to here?
+### comment out until we can fix (might not even be needed?)
+# bmi_data <- mutate(bmi_data, carea = paste(substr(CA2019, 8, 9), CA2019Name))
 
 
 bmi_basefile <- bmi_data %>%
-  subset(select = c(chi, id, HB2019, CA2019, carea, sex, height, weight, daterec, 
+  subset(select = c(chi, id, HB2019, HB2019Name, hb2019_cypher, HB2018,
+                    CA2019, CA2019Name, CA2018,
+                    sex, height, weight, daterec, 
                     schlyr_exam, schlgivn, rev_num, agemth, nyob, mob, dob, pc7,
                     simd_2016, simd_2012, simd_2009, simd_2006, 
                     simd_2004, simd, sex, height_m, weight_kg, bmi, 
@@ -659,28 +610,28 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2017 ~ "1718"))  
 
 ## Recode HB variable to single character cypher
-hb_pop_estimates$HB2019 <- hb_pop_estimates$HB2019 %>%
-  recode('S08000015' = 'A',
-         'S08000016' = 'B',
-         'S08000017' = 'Y',
-         'S08000019' = 'V',
-         'S08000020' = 'N',
-         'S08000031' = 'G',
-         'S08000022' = 'H',
-         'S08000032' = 'L',
-         'S08000024' = 'S',
-         'S08000025' = 'R',
-         'S08000026' = 'Z',
-         'S08000028' = 'W',
-         'S08000029' = 'F',
-         'S08000030' = 'T') 
+##### potentially call the function?
+# call the function for creating HB cypher
+# apply_hb2019_cypher(hb_pop_estimates) 
+hb_pop_estimates <- hb_pop_estimates %>% 
+  mutate(hb2019_cypher = case_when(HB2019 == "S08000015" ~ "A",
+                                   HB2019 == 'S08000016' ~ 'B',
+                                   HB2019 == 'S08000017' ~ 'Y',
+                                   HB2019 == 'S08000019' ~ 'V',
+                                   HB2019 == 'S08000020' ~ 'N',
+                                   HB2019 == 'S08000031' ~ 'G',
+                                   HB2019 == 'S08000022' ~ 'H',
+                                   HB2019 == 'S08000032' ~ 'L',
+                                   HB2019 == 'S08000024' ~ 'S',
+                                   HB2019 == 'S08000025' ~ 'R',
+                                   HB2019 == 'S08000026' ~ 'Z',
+                                   HB2019 == 'S08000028' ~ 'W',
+                                   HB2019 == 'S08000029' ~ 'F',
+                                   HB2019 == 'S08000030' ~ 'T'))
 
 # Exclude schlyr 02/03 from Borders data
 hb_pop_estimates <- hb_pop_estimates %>%
   subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
-
-# call the function for creating HB cypher
-### apply_hb_cypher(hb_pop_estimates) # %>%
 
 # call the function for selecing the relevant year for each board
   hb_pop_estimates <- hb_pop_estimates %>%
@@ -826,7 +777,7 @@ hb_pop_estimates <- hb_pop_estimates %>%
   subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
 
 # call the function for creating HB cypher
-# apply_hb_cypher(hb_pop_estimates) 
+# apply_hb2019_cypher(hb_pop_estimates) 
 
 # call the function for selecing the relevant year for each board
 hb_pop_estimates <- hb_pop_estimates %>%
@@ -958,7 +909,7 @@ simd_pop_estimates_2 <- rbind(simd_pop_estimates_2 %>%
 
 
 # Match the two simd populations files together
-simd_pop_estimates <- left_join(simd_pop_estimates_1, simd_pop_estimates_2,
+simd_pop_estimates <- rbind(simd_pop_estimates_1, simd_pop_estimates_2,
                                 by = c("simd" , "schlyr_exam"))
 
 
