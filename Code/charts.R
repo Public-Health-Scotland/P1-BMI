@@ -48,15 +48,9 @@ figure_two_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
   mutate(ovob_perc=epi_overweightobese/n_valid*100,und_perc=epi_underweight/n_valid*100) %>%
   gather(epi_category,percentage,ovob_perc:und_perc) %>%
   subset(select=c(schlyr_exam,sex,epi_category,percentage)) %>%
-  mutate(category=paste(sex,epi_category),
-         category_label = case_when(category == "F ovob_perc" ~ "Female overweight/obese",
-                                    category == "M ovob_perc" ~ "Male overweight/obese",
-                                    category == "F und_perc" ~ "Female underweight",
-                                    category == "M und_perc" ~ "Male underweight"))
+  mutate(category=paste(sex,epi_category))
+         
 
-ggplot(data=figure_two_data, aes(x=schlyr_exam, y=percentage, group=category)) +
-  geom_line()+
-  geom_point()
 
 trend_palette <- scale_color_manual(values = c("#004949", "#006dd1", "#49006a", 
                                                "#920000", "#924900", "#db6d00", 
@@ -89,4 +83,35 @@ geom_line(aes(colour = sex, linetype = epi_category, group = category), size = 1
   scale_y_continuous(labels = function(x) sprintf("%.1f", x),
                      limits = c(0, NA))
 
+
+figure_four_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
+  subset(select = c(simd, schlyr_exam, tot, cent_grp5)) %>%
+  group_by(simd, schlyr_exam) %>%
+  summarise(epi_overweightobese=sum(cent_grp5),n_valid=sum(tot)) %>%
+  ungroup() %>% 
+  mutate(ovob_perc=epi_overweightobese/n_valid*100)
+
+figure_four <- ggplot(data = figure_four_data %>% filter(simd != "NA"), aes(x = schlyr_exam, 
+                                                 y = ovob_perc)) +
+  geom_line(aes(colour = as.factor(simd), group = as.factor(simd)), size = 1) +
+  scale_color_manual(values = c("#004949", "#006dd1", "#49006a", 
+                                "#920000", "#924900", "#db6d00", 
+                                "#24ff24"),
+                     labels = c("1 - Most deprived", "2", "3", "4", "5 - Least deprived")) +
+  labs(x = "School Year", y = "Percentage") +
+  theme(panel.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
+        panel.grid.major.y = element_blank(),
+        axis.line.x = element_line(size = .1, color = "#787878"),
+        axis.line.y = element_line(size = .1, color = "#787878"),
+        axis.title.x = element_text(size = 10, face = "bold"),
+        axis.title.y = element_text(size = 10, face = "bold"),
+        axis.text.x = element_text(size = 9, angle = 90, hjust = 0, vjust = 0.5),
+        legend.title = element_blank(),
+        legend.position = "top",
+        legend.key = element_rect(colour = NA, fill = NA)) +
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
+                     limits = c(0, 30))
+
+figure_four
 
