@@ -609,29 +609,12 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718"))  
 
-## Recode HB variable to single character cypher
-##### potentially call the function?
 # call the function for creating HB cypher
-# apply_hb2019_cypher(hb_pop_estimates) 
-hb_pop_estimates <- hb_pop_estimates %>% 
-  mutate(hb2019_cypher = case_when(HB2019 == "S08000015" ~ "A",
-                                   HB2019 == 'S08000016' ~ 'B',
-                                   HB2019 == 'S08000017' ~ 'Y',
-                                   HB2019 == 'S08000019' ~ 'V',
-                                   HB2019 == 'S08000020' ~ 'N',
-                                   HB2019 == 'S08000031' ~ 'G',
-                                   HB2019 == 'S08000022' ~ 'H',
-                                   HB2019 == 'S08000032' ~ 'L',
-                                   HB2019 == 'S08000024' ~ 'S',
-                                   HB2019 == 'S08000025' ~ 'R',
-                                   HB2019 == 'S08000026' ~ 'Z',
-                                   HB2019 == 'S08000028' ~ 'W',
-                                   HB2019 == 'S08000029' ~ 'F',
-                                   HB2019 == 'S08000030' ~ 'T'))
+hb_pop_estimates <- apply_hb2019_cypher(hb_pop_estimates) 
 
 # Exclude schlyr 02/03 from Borders data
 hb_pop_estimates <- hb_pop_estimates %>%
-  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
+  subset(!(hb2019_cypher == 'B' & schlyr_exam == '0203'))
 
 # call the function for selecing the relevant year for each board
   hb_pop_estimates <- hb_pop_estimates %>%
@@ -676,7 +659,7 @@ hb_data <- left_join(hb_data, hb_pop_estimates,
 # Confidence intervals (hb)
 # use the function to calculate confidence intervals
 
-calculate_ci(hb_data)
+test_ci <- calculate_ci(hb_data)
 
 # save as csv file
 write_csv(hb_data, paste0(host_folder, Output, "hb_data.csv"))
