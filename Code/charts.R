@@ -1,6 +1,6 @@
 ### -- Figure 2 - line chart 
 #Percentage of Primary 1 children at risk of overweight and obesity, and
-#underweight (epidemiological categories), by gender, school years 2001/02 to 2017/18,
+#underweight (epidemiological categories), by gender, school years 2001/02 to 2018/19,
 #all participating NHS Boards/Scotland
 
 ## Install Packages
@@ -40,44 +40,53 @@ if (server_desktop == "server") {
   lookupFolder <-"//Isdsf00d03/cl-out/lookups"
   output_folder <- "//stats/ChildHealthSurveillance/Topics/Obesity/Publications/Primary1BMI/20191210/RAP/Tableau/"
 }
-figure_two_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) 
-
-figure_two_data <- subset(figure_two_data, 
-                          select = c(sex, schlyr_exam, tot, cent_grp1, cent_grp5)) %>%
-  group_by(schlyr_exam,sex) %>%
-  summarise(Epi_OverweightObese = sum(cent_grp5),Epi_Underweight=sum(cent_grp1),N_Valid_Height_Weight=sum(tot)) %>%
+figure_two_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
+  subset(select = c(sex, schlyr_exam, tot, cent_grp1, cent_grp5)) %>%
+  group_by(sex, schlyr_exam) %>%
+  summarise(epi_overweightobese=sum(cent_grp5),epi_underweight=sum(cent_grp1),n_valid=sum(tot)) %>%
   ungroup() %>% 
-  mutate(OvOb_Perc=Epi_OverweightObese/N_Valid_Height_Weight*100,Und_Perc=Epi_Underweight/N_Valid_Height_Weight*100) %>%
-  gather(Epi_Category,Percentage,OvOb_Perc:Und_Perc) %>%
-  subset(select=c(schlyr_exam,sex,Epi_Category,Percentage)) %>%
-  Perc2=paste(sex,Epi_Category) %>%
+  mutate(ovob_perc=epi_overweightobese/n_valid*100,und_perc=epi_underweight/n_valid*100) %>%
+  gather(epi_category,percentage,ovob_perc:und_perc) %>%
+  subset(select=c(schlyr_exam,sex,epi_category,percentage)) %>%
+  mutate(category=paste(sex,epi_category),
+         category_label = case_when(category == "F ovob_perc" ~ "Female overweight/obese",
+                                    category == "M ovob_perc" ~ "Male overweight/obese",
+                                    category == "F und_perc" ~ "Female underweight",
+                                    category == "M und_perc" ~ "Male underweight"))
 
-figure_two <- ggplot(data = figure_two_data, aes(x = school_year, 
-                                                y = Percentage)) +
-  geom_bar(position = "dodge", stat = "identity", width = 0.5, show.legend = T) + 
-  coord_flip() +
+ggplot(data=figure_two_data, aes(x=schlyr_exam, y=percentage, group=category)) +
+  geom_line()+
+  geom_point()
+
+trend_palette <- scale_color_manual(values = c("#004949", "#006dd1", "#49006a", 
+                                               "#920000", "#924900", "#db6d00", 
+                                               "#24ff24"))
+
+shape_palette <- scale_shape_manual(values = c(16, 15, 17, 3, 4, 8, 18))
+
+
+figure_two <- ggplot(data = figure_two_data, aes(x = schlyr_exam, 
+                                                y = percentage)) +
+geom_line(aes(colour = sex, linetype = epi_category, group = category), size = 1) +
+  scale_color_manual(values = c("#004949", "#006dd1", "#49006a", 
+                                "#920000", "#924900", "#db6d00", 
+                                "#24ff24"),
+                     labels = c("Female", "Male")) +
+  scale_linetype_manual(labels = c("Overweight", "Underweight"),
+                        values = c("dotdash", "solid")) +
+  labs(x = "School Year", y = "Percentage") +
   theme(panel.background = element_blank(),
-        panel.grid.major.x = element_blank(), 
-        panel.grid.major.y = element_line(size = .1, color = "#C0C0C0"),
-        axis.title.x = element_text(size = 12, face = "bold"),
-        axis.title.y = element_text(size = 12, face = "bold"),
-        axis.text = element_text(size = 12)) +
-  
-  xlab("Percentage") + ylab("School Year")
+        panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
+        panel.grid.major.y = element_blank(),
+        axis.line.x = element_line(size = .1, color = "#787878"),
+        axis.line.y = element_line(size = .1, color = "#787878"),
+        axis.title.x = element_text(size = 10, face = "bold"),
+        axis.title.y = element_text(size = 10, face = "bold"),
+        axis.text.x = element_text(size = 9, angle = 90, hjust = 0, vjust = 0.5),
+        legend.title = element_blank(),
+        legend.position = "top",
+        legend.key = element_rect(colour = NA, fill = NA)) +
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
+                     limits = c(0, NA))
 
-
-scale_x_discrete(limits = c("Other", "All participating boards", 
-                            "NHS Ayrshire & Arran", "NHS Borders", 
-                            "NHS Dumfries & Galloway", "NHS Fife", 
-                            "NHS Forth Valley", "NHS Grampian", 
-                            "NHS Greater Glasgow & Clyde", "NHS Highland", 
-                            "NHS Lanarkshire", "NHS Lothian", "NHS Orkney", 
-                            "NHS Shetland", "NHS Tayside", "NHS Western Isles")) +
-  scale_fill_manual(values = c("#0391BF", "#0391BF", "#0391BF", "#0391BF", "#0391BF", 
-                               "#0391BF", "#0391BF", "#0391BF", "#0391BF", 
-                               "#0391BF", "#0391BF", "#0391BF", "#0391BF", 
-                               "#092869", "#0391BF", "#0391BF", "#0391BF", "#0391BF")) +
-ggsave("figure_two_ggplot.png", plot = figure_two, width = 17.79, height = 14.24, units = "cm", 
-       device = "png", dpi = 600)
-figure_two
 
