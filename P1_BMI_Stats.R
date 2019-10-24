@@ -183,23 +183,23 @@ gc()
 
 ### 4 - Health Board Data Sort ----
 
-## Recode HB variable to single character cypher
+## Create single cypher HB variable
 # create a new variable in order to keep the HB codes
 bmi_data <- bmi_data %>% 
 mutate(hb2019_cypher = case_when(HB2019 == "S08000015" ~ "A",
-                             HB2019 == 'S08000016' ~ 'B',
-                             HB2019 == 'S08000017' ~ 'Y',
-                             HB2019 == 'S08000019' ~ 'V',
-                             HB2019 == 'S08000020' ~ 'N',
-                             HB2019 == 'S08000031' ~ 'G',
-                             HB2019 == 'S08000022' ~ 'H',
-                             HB2019 == 'S08000032' ~ 'L',
-                             HB2019 == 'S08000024' ~ 'S',
-                             HB2019 == 'S08000025' ~ 'R',
-                             HB2019 == 'S08000026' ~ 'Z',
-                             HB2019 == 'S08000028' ~ 'W',
-                             HB2019 == 'S08000029' ~ 'F',
-                             HB2019 == 'S08000030' ~ 'T'))
+                                 HB2019 == 'S08000016' ~ 'B',
+                                 HB2019 == 'S08000017' ~ 'Y',
+                                 HB2019 == 'S08000019' ~ 'V',
+                                 HB2019 == 'S08000020' ~ 'N',
+                                 HB2019 == 'S08000031' ~ 'G',
+                                 HB2019 == 'S08000022' ~ 'H',
+                                 HB2019 == 'S08000032' ~ 'L',
+                                 HB2019 == 'S08000024' ~ 'S',
+                                 HB2019 == 'S08000025' ~ 'R',
+                                 HB2019 == 'S08000026' ~ 'Z',
+                                 HB2019 == 'S08000028' ~ 'W',
+                                 HB2019 == 'S08000029' ~ 'F',
+                                 HB2019 == 'S08000030' ~ 'T'))
 
 # exclude records that have blank hb2019_cypher
 # blank_hb2019_cypher <- bmi_data %>%
@@ -749,7 +749,7 @@ write_csv(ca_data, paste0(host_folder, Output, "ca_data.csv"))
 # of five year olds by gender.
 gender_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
-  rename(year = Year, age = Age, pop = Pop, sex = Sex)
+  rename(year = Year, age = Age, pop = Pop, sex = SexName)
 
 gender_pop_estimates <- gender_pop_estimates %>% 
   filter(age == 5) %>%
