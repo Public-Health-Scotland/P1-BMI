@@ -1,12 +1,17 @@
-### Select relevant years function
-apply_hb_year <- function(df, HB, ey, cy = currentYr) {
-  df <- df %>%
-    subset(!(df$HB2019 == HB &
-               as.numeric(schlyr_exam) <= ey &
-               as.numeric(schlyr_exam) >= cy))
+## Select relevant years function
+apply_hb_year <- function(x, HB, ey, cy) {
+  
+  x <- x %>%
+    filter((hb2019_cypher == HB & as.numeric(schlyr_exam) >= ey & 
+              as.numeric(schlyr_exam) <= cy) | hb2019_cypher != HB)
+  
+  return(x)
+  
 }
 
-### Recode HB variable to single cypher function
+
+## Create single cypher HB variable
+# create a new variable in order to keep the HB codes
 apply_hb2019_cypher <- function(df) {
   df <- df %>%
     mutate(hb2019_cypher = case_when(df$HB2019 == "S08000015" ~ "A",
@@ -14,9 +19,9 @@ apply_hb2019_cypher <- function(df) {
                                      df$HB2019 == "S08000017" ~ "Y",
                                      df$HB2019 == "S08000019" ~ "V",
                                      df$HB2019 == "S08000020" ~ "N",
-                                     df$HB2019 == "S08000021" ~ "G",
+                                     df$HB2019 == "S08000031" ~ "G",
                                      df$HB2019 == "S08000022" ~ "H",
-                                     df$HB2019 == "S08000023" ~ "L",
+                                     df$HB2019 == "S08000032" ~ "L",
                                      df$HB2019 == "S08000024" ~ "S",
                                      df$HB2019 == "S08000025" ~ "R",
                                      df$HB2019 == "S08000026" ~ "Z",
@@ -25,6 +30,7 @@ apply_hb2019_cypher <- function(df) {
                                      df$HB2019 == "S08000030" ~ "T"))
   return(df)
 }
+
 
 calculate_ci <- function(df) {
   df <- df %>%
