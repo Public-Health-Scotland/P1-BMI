@@ -1,15 +1,18 @@
-### Select relevant years function
-apply_hb_year <- function(df, HB, ey, cy = currentYr) {
-  df <- df %>%
-    subset(!(df$HB2019 == HB &
-               as.numeric(schlyr_exam) <= ey &
-               as.numeric(schlyr_exam) >= cy))
+## Select relevant years function
+apply_hb_year <- function(x, HB, ey, cy) {
+  
+  x <- x %>%
+    filter((HB2019 == HB & as.numeric(schlyr_exam) >= ey & 
+              as.numeric(schlyr_exam) <= cy) | HB2019 != HB)
+  
+  return(x)
 }
 
+
 ### Recode HB variable to single cypher function
-apply_hb_cypher <- function(df) {
+apply_hb2019_cypher  <- function(df) {
   df <- df %>%
-    mutate(HB2019_cypher = case_when(df$HB2019 == "S08000015" ~ "A",
+    mutate(hb2019_cypher = case_when(df$HB2019 == "S08000015" ~ "A",
                                      df$HB2019 == "S08000016" ~ "B",
                                      df$HB2019 == "S08000017" ~ "Y",
                                      df$HB2019 == "S08000019" ~ "V",
@@ -25,6 +28,7 @@ apply_hb_cypher <- function(df) {
                                      df$HB2019 == "S08000030" ~ "T"))
   return(df)
 }
+
 
 calculate_ci <- function(df) {
   df <- df %>%
@@ -67,6 +71,7 @@ calculate_ci <- function(df) {
   return(df)
 }
 
+
 # Assign the appropriate SIMD value to a patient depending on the year they
 # were admitted
 apply_simd <- function(df) {
@@ -80,34 +85,8 @@ apply_simd <- function(df) {
   return(df)
 }
 
-# Postcode lookups for SIMD 2016, 2012 and 2009
-# These files will be combined, so create a year variable in each one, to allow
-# them to be differentiated from one another
-simd_2016 <- read_spss(paste0(plat_filepath,
-                              "lookups/Unicode/Deprivation",
-                              "/postcode_2019_1.5_simd2016.sav")) %>%
-  select(pc7, simd2016_sc_quintile) %>%
-  rename(postcode = pc7,
-         simd = simd2016_sc_quintile) %>%
-  mutate(year = "simd_2016")
 
-simd_2012 <- read_spss(paste0(plat_filepath,
-                              "lookups/Unicode/Deprivation/",
-                              "postcode_2016_1_simd2012.sav")) %>%
-  select(pc7, simd2012_sc_quintile) %>%
-  rename(postcode = pc7,
-         simd = simd2012_sc_quintile) %>%
-  mutate(year = "simd_2012")
-
-simd_2009 <- read_spss(paste0(plat_filepath,
-                              "lookups/Unicode/Deprivation/",
-                              "postcode_2012_2_simd2009v2.sav")) %>%
-  select(PC7, simd2009v2_sc_quintile) %>%
-  rename(postcode = PC7,
-         simd = simd2009v2_sc_quintile) %>%
-  mutate(year = "simd_2009")
-
-### 7 - Council Area Recode ----
+### -- Council Area Recode ----
 apply_ca_desc <- function(df) {
   df <- df %>%
     mutate(council_area_desc = case_when(CA2019 == "S12000033" ~ "Aberdeen City",
@@ -146,7 +125,7 @@ apply_ca_desc <- function(df) {
   return(df)
 }
 
-### 7 - Council Area Recode ----
+### -- Council Area Recode ----
 apply_ca_cypher_desc <- function(df) {
   df <- df %>%
     mutate(council_area_name = case_when(council_area == 1 ~ "Aberdeen City",
