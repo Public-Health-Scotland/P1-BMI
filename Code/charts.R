@@ -123,5 +123,20 @@ figure_one_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
             epi_overweight=sum(cent_grp3), epi_obese=sum(cent_grp4), n_valid=sum(tot)) %>%
   ungroup() %>% 
   mutate(underweight_perc=epi_underweight/n_valid*100, healthyweight_perc=epi_healthyweight/n_valid*100,
-         overweight_perc=epi_overweight/n_valid*100, obese_perc=epi_obese/n_valid*100)
+         overweight_perc=epi_overweight/n_valid*100, obese_perc=epi_obese/n_valid*100) %>%
+  gather(epi_category,percentage,underweight_perc:obese_perc) %>%
+  subset(select=c(schlyr_exam,epi_category,percentage))
+
+#  figure_one_data$group <- factor(figure_one_data$group , levels=c("underweight_perc", "healthyweight_perc", "overweight_perc", "obese_perc") )
+
+  figure_one <- ggplot(data = figure_one_data, aes(x = schlyr_exam, 
+                                                 y = percentage, group=epi_category, fill=epi_category)) +
+    geom_area(position="fill") +
+  scale_fill_manual(values=c("#0072B2", "#F0E442", "#E69F00", "#D55E00"),
+                      labels=c("At risk of underweight", "Healthy Weight", "At risk of overweight", "At risk of obesity")) +
+                      scale_y_continuous(labels = scales::percent) +
+                  labs(x = "School Year", y = "Percentage") +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                legend.title = element_blank())
+
 
