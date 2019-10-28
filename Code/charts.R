@@ -115,3 +115,13 @@ figure_four <- ggplot(data = figure_four_data %>% filter(simd != "NA"), aes(x = 
 
 figure_four
 
+
+figure_one_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
+  subset(select = c(schlyr_exam, tot, cent_grp1, cent_grp2, cent_grp3, cent_grp4)) %>%
+  group_by(schlyr_exam) %>%
+  summarise(epi_underweight=sum(cent_grp1), epi_healthyweight=sum(cent_grp2), 
+            epi_overweight=sum(cent_grp3), epi_obese=sum(cent_grp4), n_valid=sum(tot)) %>%
+  ungroup() %>% 
+  mutate(underweight_perc=epi_underweight/n_valid*100, healthyweight_perc=epi_healthyweight/n_valid*100,
+         overweight_perc=epi_overweight/n_valid*100, obese_perc=epi_obese/n_valid*100)
+
