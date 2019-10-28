@@ -46,7 +46,9 @@ calculate_ci <- function(df) {
            n_clin_overwplus = clin_cent_grp6,
            n_clin_obeplus = clin_cent_grp7)
 
-  for (weight_group_epi in c("undw", "hw", "over", "obe", "overobe")) {
+  for (weight_group_epi in c("undw", "hw", "over", "obe", "overobe", 
+                             "clin_undw", "clin_hw", "clin_over", "clin_obe", 
+                             "clin_sobe", "clin_overwplus", "clin_obeplus")) {
     df <-
       df %>% mutate(
         !!paste0("p_", weight_group_epi) := get(paste0("n_", weight_group_epi)) /
