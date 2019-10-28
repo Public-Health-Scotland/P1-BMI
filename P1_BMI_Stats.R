@@ -619,12 +619,15 @@ hb_pop_estimates <- rbind(hb_pop_estimates %>%
 
 # create totals for individual hb and all participating boards (for hb_data)
 # Board level
-hb_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
+hb_data <- bind_rows(bmi_basefile %>% group_by(HB2019, HB2019Name, hb2019_cypher,
+                                           schlyr_exam) %>%
                    summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup(),
                  # Scotland level (all participating boards)
                  bmi_basefile %>% group_by(schlyr_exam) %>% 
                    summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                   mutate(HB2019 = "Total") %>% ungroup())
+                   mutate(HB2019 = "Total",
+                          HB2019Name = "Total",
+                          hb2019_cypher = "Total") %>% ungroup())
 
 # Match hb data to hb population estimates
 hb_data <- left_join(hb_data, hb_pop_estimates, 
