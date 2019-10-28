@@ -632,11 +632,10 @@ hb_data <- left_join(hb_data, hb_pop_estimates,
 
 # Confidence intervals (hb)
 # use the function to calculate confidence intervals
-
-test_ci <- calculate_ci(hb_data)
+hb_data <- calculate_ci(hb_data)
 
 # save as csv file
-write_csv(hb_data, paste0(host_folder, Output, "hb_data.csv"))
+write_csv(hb_data, paste0(host_folder, "Output/hb_data.csv"))
 
 
 
@@ -697,7 +696,7 @@ ca_data <- calculate_ci(ca_data)
 
 
 # save as csv file
-write_csv(ca_data, paste0(host_folder, Output, "ca_data.csv"))
+write_csv(ca_data, paste0(host_folder, "Output/ca_data.csv"))
 
 
 ### Gender analysis
@@ -784,7 +783,7 @@ gender_data <- calculate_ci(gender_data)
 
 
 # save as csv file
-write_csv(gender_data, paste0(host_folder, Output, "gender_data.csv"))
+write_csv(gender_data, paste0(host_folder, "Output/gender_data.csv"))
 
 
 
@@ -887,7 +886,7 @@ simd_data <- calculate_ci(simd_data)
 
 
 # save as csv file
-write_csv(simd_data, paste0(host_folder, Output, "simd_data.csv"))
+write_csv(simd_data, paste0(host_folder, "Output/simd_data.csv"))
 
 
 ### data completeness
@@ -967,7 +966,7 @@ hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data,
 
 # save as excel file
 write_csv(hb_completeness_data, paste0(host_folder, Output,
-                                       "ca_completeness_data.csv"))
+                                       "hb_completeness_data.csv"))
 
 
 
