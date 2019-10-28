@@ -183,25 +183,10 @@ gc()
 
 ### 4 - Health Board Data Sort ----
 
-## Create single cypher HB variable
-# create a new variable in order to keep the HB codes
-bmi_data <- bmi_data %>% 
-mutate(hb2019_cypher = case_when(HB2019 == "S08000015" ~ "A",
-                                 HB2019 == 'S08000016' ~ 'B',
-                                 HB2019 == 'S08000017' ~ 'Y',
-                                 HB2019 == 'S08000019' ~ 'V',
-                                 HB2019 == 'S08000020' ~ 'N',
-                                 HB2019 == 'S08000031' ~ 'G',
-                                 HB2019 == 'S08000022' ~ 'H',
-                                 HB2019 == 'S08000032' ~ 'L',
-                                 HB2019 == 'S08000024' ~ 'S',
-                                 HB2019 == 'S08000025' ~ 'R',
-                                 HB2019 == 'S08000026' ~ 'Z',
-                                 HB2019 == 'S08000028' ~ 'W',
-                                 HB2019 == 'S08000029' ~ 'F',
-                                 HB2019 == 'S08000030' ~ 'T'))
+# call the function for creating HB cypher
+bmi_data <- apply_hb2019_cypher(bmi_data)
 
-# exclude records that have blank hb2019_cypher
+# select records that have blank hb2019_cypher
 # blank_hb2019_cypher <- bmi_data %>%
 #   subset(is.na(hb2019_cypher))                                                      #3,580 obs.
 
@@ -234,19 +219,8 @@ gc()
 bmi_data <- bmi_data %>%
   subset(!(hb2019_cypher == 'B' & schlyr_exam == '0203'))                                #655,207 obs.
 
-## Select relevant years function
-apply_hb_year <- function(x, HB, ey, cy) {
-  
-  x <- x %>%
-    filter((hb2019_cypher == HB & as.numeric(schlyr_exam) >= ey & 
-              as.numeric(schlyr_exam) <= cy) | hb2019_cypher != HB)
-  
-  return(x)
-  
-}
 
-
-# code below should work
+# call the function to select the relevant years
 bmi_data <- bmi_data %>%
   apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
   apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
@@ -719,7 +693,7 @@ ca_data <- left_join(ca_data, ca_pop_estimates,
 
 # Confidence intervals (ca)
 # use the function to calculate confidence intervals
-calculate_ci(ca_data)
+ca_data <- calculate_ci(ca_data)
 
 
 # save as csv file
@@ -760,10 +734,10 @@ hb_pop_estimates <- hb_pop_estimates %>%
   subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
 
 # call the function for creating HB cypher
-# apply_hb2019_cypher(hb_pop_estimates) 
+gender_pop_estimates <- apply_hb2019_cypher(gender_pop_estimates) 
 
 # call the function for selecing the relevant year for each board
-hb_pop_estimates <- hb_pop_estimates %>%
+gender_pop_estimates <- gender_pop_estimates %>%
   apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
   apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
   apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
@@ -806,7 +780,7 @@ gender_data <- left_join(gender_data, gender_pop_estimates,
 
 # Confidence intervals (gender)
 # use the function to calculate confidence intervals
-calculate_ci(gender_data)
+gender_data <- calculate_ci(gender_data)
 
 
 # save as csv file
@@ -909,7 +883,7 @@ simd_data <- left_join(simd_data, simd_pop_estimates,
 
 # Confidence intervals (simd)
 # use the function to calculate confidence intervals
-calculate_ci(simd_data)
+simd_data <- calculate_ci(simd_data)
 
 
 # save as csv file
