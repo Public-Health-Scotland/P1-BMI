@@ -31,7 +31,7 @@ apply_hb2019_cypher <- function(df) {
   return(df)
 }
 
-
+# function to calculate confidence intervals
 calculate_ci <- function(df) {
   df <- df %>%
     mutate(pcf = (pop - tot)/(pop - 1),
@@ -73,5 +73,22 @@ calculate_ci <- function(df) {
   return(df)
 }
 
+# function to calculate pecentages for each category
+apply_percentage_calc <- function(df) {
+  df <- df %>%
+    mutate(per_epi_undw = num_epi_undw/tot,
+           per_epi_hw = num_epi_hw/tot,
+           per_epi_over = num_epi_over/tot,
+           per_epi_obe = num_epi_obe/tot,
+           per_epi_overobe = num_epi_overobe/tot,
+           per_clin_undw = num_clin_undw/tot,
+           per_clin_hw = num_clin_hw/tot,
+           per_clin_over = num_clin_over/tot,
+           per_clin_obe = num_clin_obe/tot,
+           per_clin_sobe = num_clin_sobe/tot,
+           per_clin_overwplus = num_clin_overwplus/tot,
+           per_clin_obeplus = num_clin_obeplus/tot)
+  return(df)
+}
 
 
