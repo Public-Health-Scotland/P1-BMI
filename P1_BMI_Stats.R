@@ -868,9 +868,7 @@ simd_pop_estimates_2 <- rbind(simd_pop_estimates_2 %>%
 
 
 # Match the two simd populations files together
-simd_pop_estimates <- rbind(simd_pop_estimates_1, simd_pop_estimates_2,
-                                by = c("simd" , "schlyr_exam"))
-
+simd_pop_estimates <- rbind(simd_pop_estimates_1, simd_pop_estimates_2)
 
 
 # create totals for simd (simd_data)
