@@ -530,11 +530,6 @@ blank_simd <- bmi_data %>%
   subset(is.na(simd))                                                             #96 obs.
 
 
-### not sure this is doing what we want it to here?
-### comment out until we can fix (might not even be needed?)
-# bmi_data <- mutate(bmi_data, carea = paste(substr(CA2019, 8, 9), CA2019Name))
-
-
 bmi_basefile <- bmi_data %>%
   subset(select = c(chi, id, HB2019, HB2019Name, hb2019_cypher, HB2018,
                     CA2019, CA2019Name, CA2018,
@@ -633,9 +628,36 @@ hb_data <- bind_rows(bmi_basefile %>% group_by(HB2019, HB2019Name, hb2019_cypher
 hb_data <- left_join(hb_data, hb_pop_estimates, 
                      by = c("HB2019", "schlyr_exam"))
 
-# Confidence intervals (hb)
-# use the function to calculate confidence intervals
-hb_data <- calculate_ci(hb_data)
+# rename the variables
+hb_data <- hb_data %>% 
+mutate(total_reviews = tot,
+       num_epi_undw = cent_grp1,
+       num_epi_hw = cent_grp2,
+       num_epi_over = cent_grp3,
+       num_epi_obe = cent_grp4,
+       num_epi_overobe = cent_grp5,
+       num_clin_undw = clin_cent_grp1,
+       num_clin_hw = clin_cent_grp2,
+       num_clin_over = clin_cent_grp3,
+       num_clin_obe = clin_cent_grp4,
+       num_clin_sobe = clin_cent_grp5,
+       num_clin_overwplus = clin_cent_grp6,
+       num_clin_obeplus = clin_cent_grp7)
+
+# call the function to create the percentages for each category
+hb_data <- apply_percentage_calc(hb_data)
+
+# select only the variables needed
+hb_data <- hb_data %>%
+  subset(select = c(HB2019, HB2019Name, hb2019_cypher, schlyr_exam,
+                    total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
+                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                    num_clin_over, num_clin_obe, num_clin_sobe, 
+                    num_clin_overwplus, num_clin_obeplus, 
+                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                    per_epi_overobe, per_clin_undw, per_clin_hw, per_clin_over,
+                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                    per_clin_obeplus))
 
 # save as csv file
 write_csv(hb_data, paste0(host_folder, "Output/hb_data.csv"))
@@ -691,11 +713,6 @@ ca_data <- subset(ca_data, tot >50)
 # Match ca data to ca population estimates
 ca_data <- left_join(ca_data, ca_pop_estimates, 
                      by = c("CA2019", "schlyr_exam"))
-
-
-# Confidence intervals (ca)
-# use the function to calculate confidence intervals
-ca_data <- calculate_ci(ca_data)
 
 
 # save as csv file
@@ -778,11 +795,6 @@ gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
 # Match gender data to gender population estimates
 gender_data <- left_join(gender_data, gender_pop_estimates, 
                          by = c("sex", "schlyr_exam"))
-
-
-# Confidence intervals (gender)
-# use the function to calculate confidence intervals
-gender_data <- calculate_ci(gender_data)
 
 
 # save as csv file
@@ -879,11 +891,6 @@ simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
 # add simd_data to simd_population_estimates
 simd_data <- left_join(simd_data, simd_pop_estimates, 
                        by = c("simd", "schlyr_exam"))
-
-
-# Confidence intervals (simd)
-# use the function to calculate confidence intervals
-simd_data <- calculate_ci(simd_data)
 
 
 # save as csv file
