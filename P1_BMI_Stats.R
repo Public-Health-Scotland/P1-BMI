@@ -732,7 +732,7 @@ gender_pop_estimates <- gender_pop_estimates %>%
                                  year == 2017 ~ "1718"))  
 
 # Exclude schlyr 02/03 from Borders data
-hb_pop_estimates <- hb_pop_estimates %>%
+gender_pop_estimates <- gender_pop_estimates %>%
   subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
 
 # call the function for creating HB cypher
@@ -918,7 +918,6 @@ sco_pop_estimates <- sco_pop_estimates %>%
                                  year == 2016 ~ "1617",
                                  year == 2017 ~ "1718"))  
 
-
 # Scotland level population estimates by year
 sco_pop_estimates <- rbind(sco_pop_estimates %>% 
                              group_by(schlyr_exam) %>%
@@ -926,9 +925,7 @@ sco_pop_estimates <- rbind(sco_pop_estimates %>%
                              mutate(HB2019 = "Total") %>% ungroup())
 
 # save as excel file
-write_csv(sco_pop_estimates, paste0(host_folder, Output,
-                                       "scotland_pop.csv"))
-
+write_csv(sco_pop_estimates, paste0(host_folder, "Output/scotland_pop.csv"))
 
 
 # board level completeness
@@ -966,9 +963,8 @@ hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data,
         full_join(hb_valid_p1rev_data, by = c("HB2019", "schlyr_exam"))
 
 # save as excel file
-write_csv(hb_completeness_data, paste0(host_folder, Output,
-                                       "hb_completeness_data.csv"))
-
+write_csv(hb_completeness_data, paste0(host_folder, 
+                                       "Output/hb_completeness_data.csv"))
 
 
 # council area completeness
@@ -993,10 +989,8 @@ subset(total_reviews >50)
 
 
 # save as csv file
-write_csv(ca_completeness_data, paste0(host_folder, Output,
-                                       "ca_completeness_data.csv"))
-
-
+write_csv(ca_completeness_data, paste0(host_folder,
+                                       "Output/ca_completeness_data.csv"))
 
 
 ### END OF SCRIPT ### ----
