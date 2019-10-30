@@ -145,4 +145,15 @@ figure_one_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
 figure_one
 
 
-
+figure_six_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
+  subset(select = c(schlyr_exam, tot, clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, clin_cent_grp5)) %>%
+  group_by(schlyr_exam) %>%
+  summarise(clin_underweight=sum(clin_cent_grp1), clin_healthyweight=sum(clin_cent_grp2), 
+            clin_overweight=sum(clin_cent_grp3), clin_obese=sum(clin_cent_grp4), 
+            clin_sev_obese=sum(clin_cent_grp5), n_valid=sum(tot)) %>%
+  ungroup() %>% 
+  mutate(clin_underweight_perc=clin_underweight/n_valid*100, clin_healthyweight_perc=clin_healthyweight/n_valid*100,
+         clin_overweight_perc=clin_overweight/n_valid*100, clin_obese_perc=clin_obese/n_valid*100, 
+         clin_sev_obese_perc=clin_sev_obese/n_valid*100) %>%
+  gather(clin_category,percentage,clin_underweight_perc:clin_sev_obese_perc) %>%
+  subset(select=c(schlyr_exam,clin_category,percentage))
