@@ -797,7 +797,7 @@ gender_data <- gender_data %>%
          num_clin_overwplus = clin_cent_grp6,
          num_clin_obeplus = clin_cent_grp7)
 
-# call the function to calculate percentages in each category
+# call the function to calculate percentages in each weight category
 gender_data <- apply_percentage_calc(gender_data)
 
 
@@ -841,7 +841,7 @@ simd_data <- simd_data %>%
          num_clin_overwplus = clin_cent_grp6,
          num_clin_obeplus = clin_cent_grp7)
 
-# call the function to calculate percentages in each category
+# call the function to calculate percentages in each weight category
 simd_data <- apply_percentage_calc(simd_data)
 
 
