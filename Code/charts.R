@@ -136,7 +136,13 @@ figure_one_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
                       labels=c("At risk of underweight", "Healthy Weight", "At risk of overweight", "At risk of obesity")) +
                       scale_y_continuous(labels = scales::percent) +
                   labs(x = "School Year", y = "Percentage") +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          theme(panel.background = element_blank(),
+                panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
+                panel.grid.major.y = element_blank(),
+                axis.text.x = element_text(angle = 45, hjust = 1),
                 legend.title = element_blank())
+
+figure_one
+
 
 
