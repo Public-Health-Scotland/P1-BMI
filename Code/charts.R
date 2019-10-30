@@ -157,3 +157,20 @@ figure_six_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
          clin_sev_obese_perc=clin_sev_obese/n_valid*100) %>%
   gather(clin_category,percentage,clin_underweight_perc:clin_sev_obese_perc) %>%
   subset(select=c(schlyr_exam,clin_category,percentage))
+
+
+figure_six <- ggplot(data = figure_six_data, aes(x = schlyr_exam, 
+                                                 y = percentage, group=clin_category, fill=clin_category)) +
+  geom_area(position="fill") +
+  scale_fill_manual(values=c("#0072B2", "#F0E442", "#E69F00", "#D55E00", "#FF0000"),
+                    labels=c("Underweight", "Healthy Weight", "Overweight", "Obese", "Severely obese")) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "School Year", y = "Percentage") +
+  theme(panel.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
+        panel.grid.major.y = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.title = element_blank())
+
+figure_six
+
