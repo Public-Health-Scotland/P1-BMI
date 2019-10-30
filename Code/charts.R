@@ -50,6 +50,8 @@ trend_palette <- scale_color_manual(values = c("#004949", "#006dd1", "#49006a",
 
 shape_palette <- scale_shape_manual(values = c(16, 15, 17, 3, 4, 8, 18))
 
+#manipulate data for figure one
+
 figure_one_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
   subset(select = c(schlyr_exam, tot, cent_grp1, cent_grp2, cent_grp3, cent_grp4)) %>%
   group_by(schlyr_exam) %>%
@@ -62,6 +64,8 @@ figure_one_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
   subset(select=c(schlyr_exam,epi_category,percentage))
 
 #  figure_one_data$group <- factor(figure_one_data$group , levels=c("underweight_perc", "healthyweight_perc", "overweight_perc", "obese_perc") )
+
+# create figure one
 
 figure_one <- ggplot(data = figure_one_data, aes(x = schlyr_exam, 
                                                  y = percentage, group=epi_category, fill=epi_category)) +
@@ -78,6 +82,8 @@ figure_one <- ggplot(data = figure_one_data, aes(x = schlyr_exam,
 
 figure_one
 
+#manipulate data for figure two
+
 figure_two_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
   subset(select = c(sex, schlyr_exam, tot, cent_grp1, cent_grp5)) %>%
   group_by(sex, schlyr_exam) %>%
@@ -87,6 +93,8 @@ figure_two_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
   gather(epi_category,percentage,ovob_perc:und_perc) %>%
   subset(select=c(schlyr_exam,sex,epi_category,percentage)) %>%
   mutate(category=paste(sex,epi_category))
+
+# create figure two
 
 figure_two <- ggplot(data = figure_two_data, aes(x = schlyr_exam, 
                                                 y = percentage)) +
@@ -115,29 +123,41 @@ geom_line(aes(colour = sex, linetype = epi_category, group = category), size = 1
 figure_two
 
 
+#manipulate data for figure three
+
 figure_three_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
-  subset(select = c(schlyr_exam, tot, cent_grp1, cent_grp3, cent_grp4)) %>%
-  group_by(schlyr_exam) %>%
+  subset(select = c(simd, schlyr_exam, tot, cent_grp1, cent_grp3, cent_grp4)) %>%
+  group_by(simd, schlyr_exam) %>%
   summarise(epi_underweight=sum(cent_grp1), epi_overweight=sum(cent_grp3), 
             epi_obese=sum(cent_grp4),n_valid=sum(tot)) %>%
   ungroup() %>% 
   mutate(under_perc=epi_underweight/n_valid*100,over_perc=epi_overweight/n_valid*100,
          obese_perc=epi_obese/n_valid*100)%>%
   gather(epi_category,percentage,under_perc:obese_perc) %>%
-  subset(select=c(schlyr_exam,epi_category,percentage))
+  filter(schlyr_exam =="1718") %>%
+  subset(select=c(schlyr_exam, simd, epi_category, percentage))
+
+# create figure three
+
+figure_three <- ggplot(data = figure_three_data %>% filter(simd != "NA"), 
+                       aes(x = simd, y = percentage, fill=epi_category)) + 
+  geom_bar(position="dodge", stat="identity") +
+  scale_fill_manual(values=c("#0072B2", "#E69F00", "#D55E00"),
+                  labels=c("At risk of underweight - BMI <= 2nd centile", 
+                           "At risk of overweight - BMI >=85th and <95th centile",
+                           "At risk of obesity - BMI >=95th centile")) +
+  labs(x = "Deprivation Level", y = "Percentage") +
+  theme(panel.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
+        panel.grid.major.y = element_blank(),
+        legend.title = element_blank())
 
 
 
+figure_three
 
 
-
-
-
-
-
-
-
-
+#manipulate data for figure four
 
 figure_four_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
   subset(select = c(simd, schlyr_exam, tot, cent_grp5)) %>%
@@ -145,6 +165,8 @@ figure_four_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds
   summarise(epi_overweightobese=sum(cent_grp5),n_valid=sum(tot)) %>%
   ungroup() %>% 
   mutate(ovob_perc=epi_overweightobese/n_valid*100)
+
+# create figure four
 
 figure_four <- ggplot(data = figure_four_data %>% filter(simd != "NA"), aes(x = schlyr_exam, 
                                                  y = ovob_perc)) +
@@ -172,7 +194,7 @@ figure_four
 
 
 
-
+#manipulate data for figure six
 
 figure_six_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
   subset(select = c(schlyr_exam, tot, clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, clin_cent_grp5)) %>%
@@ -187,6 +209,7 @@ figure_six_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
   gather(clin_category,percentage,clin_underweight_perc:clin_sev_obese_perc) %>%
   subset(select=c(schlyr_exam,clin_category,percentage))
 
+# create figure six
 
 figure_six <- ggplot(data = figure_six_data, aes(x = schlyr_exam, 
                                                  y = percentage, group=clin_category, fill=clin_category)) +
