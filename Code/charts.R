@@ -14,7 +14,6 @@ install.packages("lubridate")
 install.packages("ggplot2")
 
 
-
 library(haven)    # used for importing SPSS files
 library(dplyr)
 library(lubridate)
@@ -23,6 +22,7 @@ library(here)
 library(readr)
 library(tidyr)
 library(ggplot2)
+library(forcats)
 
 ## File Locations
 # Source Data
@@ -61,23 +61,29 @@ figure_one_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
   mutate(underweight_perc=epi_underweight/n_valid*100, healthyweight_perc=epi_healthyweight/n_valid*100,
          overweight_perc=epi_overweight/n_valid*100, obese_perc=epi_obese/n_valid*100) %>%
   gather(epi_category,percentage,underweight_perc:obese_perc) %>%
-  subset(select=c(schlyr_exam,epi_category,percentage))
-
-#  figure_one_data$group <- factor(figure_one_data$group , levels=c("underweight_perc", "healthyweight_perc", "overweight_perc", "obese_perc") )
+  subset(select=c(schlyr_exam,epi_category,percentage)) %>%
+  mutate(epi_category = factor(epi_category, levels=c("obese_perc", "overweight_perc",
+                                                      "healthyweight_perc", "underweight_perc"))) %>%
+  mutate(schoolyear=paste0("20", substr(schlyr_exam,1, 2),"/", 
+                           substr(schlyr_exam, 3, 4)))
 
 # create figure one
 
-figure_one <- ggplot(data = figure_one_data, aes(x = schlyr_exam, 
+figure_one <- ggplot(data = figure_one_data, aes(x = schoolyear, 
                                                  y = percentage, group=epi_category, fill=epi_category)) +
   geom_area(position="fill") +
-  scale_fill_manual(values=c("#0072B2", "#F0E442", "#E69F00", "#D55E00"),
-                    labels=c("At risk of underweight", "Healthy Weight", "At risk of overweight", "At risk of obesity")) +
+  scale_fill_manual(values=c("#D55E00", "#E69F00", "#F0E442", "#0072B2"),
+                    labels=c("At risk of obesity (>=95th centile)",
+                             "At risk of overweight (85th- <95th centile)",
+                             "Healthy Weight (>2nd and <85th centile)",
+                             "At risk of underweight (<= 2nd centile)")) +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "School Year", y = "Percentage") +
   theme(panel.background = element_blank(),
         panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
         panel.grid.major.y = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top",
         legend.title = element_blank())
 
 figure_one
@@ -92,11 +98,13 @@ figure_two_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
   mutate(ovob_perc=epi_overweightobese/n_valid*100,und_perc=epi_underweight/n_valid*100) %>%
   gather(epi_category,percentage,ovob_perc:und_perc) %>%
   subset(select=c(schlyr_exam,sex,epi_category,percentage)) %>%
-  mutate(category=paste(sex,epi_category))
+  mutate(category=paste(sex,epi_category)) %>%
+  mutate(schoolyear=paste0("20", substr(schlyr_exam,1, 2),"/", 
+                           substr(schlyr_exam, 3, 4)))
 
 # create figure two
 
-figure_two <- ggplot(data = figure_two_data, aes(x = schlyr_exam, 
+figure_two <- ggplot(data = figure_two_data, aes(x = schoolyear, 
                                                 y = percentage)) +
 geom_line(aes(colour = sex, linetype = epi_category, group = category), size = 1) +
   scale_color_manual(values = c("#004949", "#006dd1", "#49006a", 
@@ -126,30 +134,42 @@ figure_two
 #manipulate data for figure three
 
 figure_three_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"))) %>%
-  subset(select = c(simd, schlyr_exam, tot, cent_grp1, cent_grp3, cent_grp4)) %>%
-  group_by(simd, schlyr_exam) %>%
+  subset(select = c(simd, schoolyear, tot, cent_grp1, cent_grp3, cent_grp4)) %>%
+  group_by(simd, schoolyear) %>%
   summarise(epi_underweight=sum(cent_grp1), epi_overweight=sum(cent_grp3), 
             epi_obese=sum(cent_grp4),n_valid=sum(tot)) %>%
   ungroup() %>% 
   mutate(under_perc=epi_underweight/n_valid*100,over_perc=epi_overweight/n_valid*100,
          obese_perc=epi_obese/n_valid*100)%>%
   gather(epi_category,percentage,under_perc:obese_perc) %>%
-  filter(schlyr_exam =="1718") %>%
-  subset(select=c(schlyr_exam, simd, epi_category, percentage))
+  filter(schoolyear =="2017/18") %>%
+  subset(select=c(schoolyear, simd, epi_category, percentage)) %>%
+  mutate(epi_category = factor(epi_category, levels=c("under_perc", "over_perc", "obese_perc"))) %>% 
+  mutate(simd = case_when(simd == 1 ~ "1 - Most Deprived",
+                          simd == 2 ~ "2", 
+                          simd == 3 ~ "3", 
+                          simd == 4 ~ "4", 
+                          simd == 5 ~ "5 - Least Deprived")) %>%
+  mutate(schoolyear=paste0("20", substr(schlyr_exam,1, 2),"/", 
+                           substr(schlyr_exam, 3, 4)))
+                          
 
 # create figure three
 
 figure_three <- ggplot(data = figure_three_data %>% filter(simd != "NA"), 
                        aes(x = simd, y = percentage, fill=epi_category)) + 
   geom_bar(position="dodge", stat="identity") +
+  geom_text(aes(label=sprintf("%0.1f", round(percentage, digits = 1))),
+            position=position_dodge(width=1),vjust = -1) +
   scale_fill_manual(values=c("#0072B2", "#E69F00", "#D55E00"),
-                  labels=c("At risk of underweight - BMI <= 2nd centile", 
-                           "At risk of overweight - BMI >=85th and <95th centile",
-                           "At risk of obesity - BMI >=95th centile")) +
+                  labels=c("At risk of underweight (BMI <= 2nd centile)", 
+                           "At risk of overweight (BMI >=85th and <95th centile)",
+                           "At risk of obesity (BMI >=95th centile)")) +
   labs(x = "Deprivation Level", y = "Percentage") +
   theme(panel.background = element_blank(),
         panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
         panel.grid.major.y = element_blank(),
+        legend.position = "top",
         legend.title = element_blank())
 
 
@@ -164,11 +184,13 @@ figure_four_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds
   group_by(simd, schlyr_exam) %>%
   summarise(epi_overweightobese=sum(cent_grp5),n_valid=sum(tot)) %>%
   ungroup() %>% 
-  mutate(ovob_perc=epi_overweightobese/n_valid*100)
+  mutate(ovob_perc=epi_overweightobese/n_valid*100) %>%
+  mutate(schoolyear=paste0("20", substr(schlyr_exam,1, 2),"/", 
+                           substr(schlyr_exam, 3, 4)))
 
 # create figure four
 
-figure_four <- ggplot(data = figure_four_data %>% filter(simd != "NA"), aes(x = schlyr_exam, 
+figure_four <- ggplot(data = figure_four_data %>% filter(simd != "NA"), aes(x = schoolyear, 
                                                  y = ovob_perc)) +
   geom_line(aes(colour = as.factor(simd), group = as.factor(simd)), size = 1) +
   scale_color_manual(values = c("#004949", "#006dd1", "#49006a", 
@@ -207,22 +229,31 @@ figure_six_data <- readRDS(paste(file.path(host_folder, "BMI_data_0102_1718.rds"
          clin_overweight_perc=clin_overweight/n_valid*100, clin_obese_perc=clin_obese/n_valid*100, 
          clin_sev_obese_perc=clin_sev_obese/n_valid*100) %>%
   gather(clin_category,percentage,clin_underweight_perc:clin_sev_obese_perc) %>%
-  subset(select=c(schlyr_exam,clin_category,percentage))
+  subset(select=c(schlyr_exam,clin_category,percentage)) %>%
+  mutate(clin_category = factor(clin_category, levels=c("clin_sev_obese_perc", "clin_obese_perc",
+                                                      "clin_overweight_perc", "clin_healthyweight_perc",
+                                                      "clin_underweight_perc"))) %>%
+  mutate(schoolyear=paste0("20", substr(schlyr_exam,1, 2),"/", 
+                           substr(schlyr_exam, 3, 4)))
 
 # create figure six
 
-figure_six <- ggplot(data = figure_six_data, aes(x = schlyr_exam, 
+figure_six <- ggplot(data = figure_six_data, aes(x = schoolyear, 
                                                  y = percentage, group=clin_category, fill=clin_category)) +
   geom_area(position="fill") +
-  scale_fill_manual(values=c("#0072B2", "#F0E442", "#E69F00", "#D55E00", "#FF0000"),
-                    labels=c("Underweight", "Healthy Weight", "Overweight", "Obese", "Severely obese")) +
+  scale_fill_manual(values=c("#FF0000", "#D55E00", "#E69F00", "#F0E442", "#0072B2"),
+                    labels=c("Severely obese", "Obese", "Overweight", "Healthy Weight", "Underweight")) +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "School Year", y = "Percentage") +
   theme(panel.background = element_blank(),
         panel.grid.minor.x = element_line(size = .15, color = "#C0C0C0"), 
         panel.grid.major.y = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top",
         legend.title = element_blank())
 
 figure_six
+
+
+
 
