@@ -628,26 +628,27 @@ hb_data <- bind_rows(bmi_basefile %>% group_by(HB2019, HB2019Name, hb2019_cypher
 hb_data <- left_join(hb_data, hb_pop_estimates, 
                      by = c("HB2019", "schlyr_exam"))
 
+# call the function to calculate confidence intervals
+hb_data <- apply_ci_calculation(hb_data)
+
 # rename the variables
-hb_data <- hb_data %>% 
-mutate(total_reviews = tot,
-       num_epi_undw = cent_grp1,
-       num_epi_hw = cent_grp2,
-       num_epi_over = cent_grp3,
-       num_epi_obe = cent_grp4,
-       num_epi_overobe = cent_grp5,
-       num_clin_undw = clin_cent_grp1,
-       num_clin_hw = clin_cent_grp2,
-       num_clin_over = clin_cent_grp3,
-       num_clin_obe = clin_cent_grp4,
-       num_clin_sobe = clin_cent_grp5,
-       num_clin_overwplus = clin_cent_grp6,
-       num_clin_obeplus = clin_cent_grp7)
+hb_data <- hb_data %>%
+rename(total_reviews = tot,
+       per_epi_undw = epi_undw_bmi,
+       per_epi_hw = epi_hw_bmi,
+       per_epi_over = epi_over_bmi,
+       per_epi_obe = epi_obe_bmi,
+       per_epi_overobe = epi_overobe_bmi,
+       per_clin_undw = clin_undw_bmi,
+       per_clin_hw = clin_hw_bmi,
+       per_clin_over = clin_over_bmi,
+       per_clin_obe = clin_obe_bmi,
+       per_clin_sobe = clin_sobe_bmi,
+       per_clin_overwplus = clin_overwplus_bmi,
+       per_clin_obeplus = clin_obeplus_bmi)
 
-# call the function to create the percentages for each category
-hb_data <- apply_percentage_calc(hb_data)
 
-# select only the variables needed
+# select the variables needed for both the excel tables and open data
 hb_data <- hb_data %>%
   subset(select = c(HB2019, HB2019Name, hb2019_cypher, schlyr_exam,
                     total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
@@ -655,9 +656,18 @@ hb_data <- hb_data %>%
                     num_clin_over, num_clin_obe, num_clin_sobe, 
                     num_clin_overwplus, num_clin_obeplus, 
                     per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
-                    per_epi_overobe, per_clin_undw, per_clin_hw, per_clin_over,
+                    per_epi_overobe, 
+                    per_clin_undw, per_clin_hw, per_clin_over,
                     per_clin_obe, per_clin_sobe, per_clin_overwplus,
-                    per_clin_obeplus))
+                    per_clin_obeplus,
+                    epi_undw_lci, epi_undw_uci, epi_hw_lci, epi_hw_uci,
+                    epi_over_lci, epi_over_uci, epi_obe_lci, epi_obe_uci,
+                    epi_overobe_lci, epi_overobe_uci,
+                    clin_undw_lci, clin_undw_uci, clin_hw_lci, clin_hw_uci,
+                    clin_over_lci, clin_over_uci, clin_obe_lci, clin_obe_uci,
+                    clin_sobe_lci, clin_sobe_uci, 
+                    clin_overwplus_lci, clin_overwplus_uci,
+                    clin_obeplus_lci, clin_obeplus_uci))
 
 # save as csv file
 write_csv(hb_data, paste0(host_folder, "Output/hb_data.csv"))
@@ -696,13 +706,13 @@ ca_pop_estimates <- ca_pop_estimates %>%
 # create totals for individual council areas (for ca_pop_estimates)
 # council area level
 ca_pop_estimates <- rbind(ca_pop_estimates %>% 
-                            group_by(CA2019, schlyr_exam)%>%
+                            group_by(CA2019, CA2019Name, schlyr_exam)%>%
                             summarise(pop = sum(pop)) %>% ungroup())
 
 
 # create totals for individual hb and all participating boards (for ca_data)
 # council area level
-ca_data <- rbind(bmi_basefile %>% group_by(CA2019, schlyr_exam) %>%
+ca_data <- rbind(bmi_basefile %>% group_by(CA2019, CA2019Name, schlyr_exam) %>%
                    summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
 
@@ -712,8 +722,38 @@ ca_data <- subset(ca_data, tot >50)
 
 # Match ca data to ca population estimates
 ca_data <- left_join(ca_data, ca_pop_estimates, 
-                     by = c("CA2019", "schlyr_exam"))
+                     by = c("CA2019", "CA2019Name", "schlyr_exam"))
 
+# rename the variables
+ca_data <- ca_data %>% 
+  mutate(total_reviews = tot,
+         num_epi_undw = cent_grp1,
+         num_epi_hw = cent_grp2,
+         num_epi_over = cent_grp3,
+         num_epi_obe = cent_grp4,
+         num_epi_overobe = cent_grp5,
+         num_clin_undw = clin_cent_grp1,
+         num_clin_hw = clin_cent_grp2,
+         num_clin_over = clin_cent_grp3,
+         num_clin_obe = clin_cent_grp4,
+         num_clin_sobe = clin_cent_grp5,
+         num_clin_overwplus = clin_cent_grp6,
+         num_clin_obeplus = clin_cent_grp7)
+
+# call the function to create the percentages for each category
+ca_data <- apply_percentage_calc(ca_data)
+
+# select only the variables needed
+ca_data <- ca_data %>%
+  subset(select = c(CA2019, CA2019Name, schlyr_exam,
+                    total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
+                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                    num_clin_over, num_clin_obe, num_clin_sobe, 
+                    num_clin_overwplus, num_clin_obeplus, 
+                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                    per_epi_overobe, per_clin_undw, per_clin_hw, per_clin_over,
+                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                    per_clin_obeplus))
 
 # save as csv file
 write_csv(ca_data, paste0(host_folder, "Output/ca_data.csv"))
