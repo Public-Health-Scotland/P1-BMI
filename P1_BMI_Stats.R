@@ -772,67 +772,6 @@ write_csv(ca_data, paste0(host_folder, "Output/ca_data.csv"))
 
 ### Gender analysis
 
-# create population file from the GRO mid year population estimates
-# of five year olds by gender.
-gender_pop_estimates <- readRDS(paste0(
-  lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
-  rename(year = Year, age = Age, pop = Pop, sex = SexName)
-
-gender_pop_estimates <- gender_pop_estimates %>% 
-  filter(age == 5) %>%
-  filter(year >= 2001 & year <=2017) %>% 
-  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
-                                 year == 2002 ~ "0203",
-                                 year == 2003 ~ "0304",
-                                 year == 2004 ~ "0405",
-                                 year == 2005 ~ "0506",
-                                 year == 2006 ~ "0607",
-                                 year == 2007 ~ "0708",
-                                 year == 2008 ~ "0809",
-                                 year == 2009 ~ "0910",
-                                 year == 2010 ~ "1011",
-                                 year == 2011 ~ "1112",
-                                 year == 2012 ~ "1213",
-                                 year == 2013 ~ "1314",
-                                 year == 2014 ~ "1415",
-                                 year == 2015 ~ "1516",
-                                 year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718"))  
-
-# Exclude schlyr 02/03 from Borders data
-gender_pop_estimates <- gender_pop_estimates %>%
-  subset(!(HB2019 == 'B' & schlyr_exam == '0203'))
-
-# call the function for creating HB cypher
-gender_pop_estimates <- apply_hb2019_cypher(gender_pop_estimates) 
-
-# call the function for selecing the relevant year for each board
-gender_pop_estimates <- gender_pop_estimates %>%
-  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
-  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
-  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
-  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
-  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
-  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
-  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
-  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
-  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
-  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr) 
-
-# create totals for male and female (for gender_pop_estimates)
-# all participating boards
-gender_pop_estimates <- rbind(gender_pop_estimates %>% 
-                                group_by(sex, schlyr_exam)%>%
-                                summarise(pop = sum(pop)) %>% ungroup(),
-                              # totals by year (all participating boards)
-                              gender_pop_estimates %>% group_by(schlyr_exam) %>%
-                                summarise(pop = sum(pop)) %>%
-                                mutate(sex = "Total") %>% ungroup())
-
-
 # create totals for male and female (for gender_data)
 # all participating boards
 gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
@@ -842,107 +781,82 @@ gender_data <- rbind(bmi_basefile %>% group_by(sex, schlyr_exam) %>%
                        summarise_at(vars(tot:clin_cent_grp7), sum) %>%
                        mutate(sex = "Total") %>% ungroup())
 
+# rename the variables 
+gender_data <- gender_data %>%
+  rename(total_reviews = tot,
+         num_epi_undw = cent_grp1,
+         num_epi_hw = cent_grp2,
+         num_epi_over = cent_grp3,
+         num_epi_obe = cent_grp4,
+         num_epi_overobe = cent_grp5,
+         num_clin_undw = clin_cent_grp1,
+         num_clin_hw = clin_cent_grp2,
+         num_clin_over = clin_cent_grp3,
+         num_clin_obe = clin_cent_grp4,
+         num_clin_sobe = clin_cent_grp5,
+         num_clin_overwplus = clin_cent_grp6,
+         num_clin_obeplus = clin_cent_grp7)
 
-# Match gender data to gender population estimates
-gender_data <- left_join(gender_data, gender_pop_estimates, 
-                         by = c("sex", "schlyr_exam"))
+# call the function to calculate percentages in each category
+gender_data <- apply_percentage_calc(gender_data)
 
+
+# select the variables needed for both the excel tables and open data
+gender_data <- gender_data %>%
+  subset(select = c(sex, schlyr_exam, total_reviews, 
+                    num_epi_undw, num_epi_hw, num_epi_over,
+                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                    num_clin_over, num_clin_obe, num_clin_sobe, 
+                    num_clin_overwplus, num_clin_obeplus, 
+                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                    per_epi_overobe, 
+                    per_clin_undw, per_clin_hw, per_clin_over,
+                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                    per_clin_obeplus))
 
 # save as csv file
 write_csv(gender_data, paste0(host_folder, "Output/gender_data.csv"))
 
 
-
 ### simd analysis
-
-# create population file from the GRO mid year population estimates
-# of five year olds by simd (for years 01/02 to 13/14)
-simd_pop_estimates_1 <- readRDS(paste0(
-  lookup_folder, "/Unicode/Populations/Estimates/DataZone2001_pop_est_2001_2014.rds")) %>%
-  select(Year, DataZone2001, SEX, AGE5, simd2004_sc_quintile, 
-         simd2006_sc_quintile, simd2009v2_sc_quintile, simd2012_sc_quintile)
-
-simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
-  rename(year = Year, pop = AGE5, sex = SEX) %>%
-  filter(year >= 2001 & year <=2013) %>% 
-  mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
-                                 year == 2002 ~ "0203",
-                                 year == 2003 ~ "0304",
-                                 year == 2004 ~ "0405",
-                                 year == 2005 ~ "0506",
-                                 year == 2006 ~ "0607",
-                                 year == 2007 ~ "0708",
-                                 year == 2008 ~ "0809",
-                                 year == 2009 ~ "0910",
-                                 year == 2010 ~ "1011",
-                                 year == 2011 ~ "1112",
-                                 year == 2012 ~ "1213",
-                                 year == 2013 ~ "1314"))
-
-# Recode simd 2004 & 2006 so all go from 1=most to 5=least
-### still to add this section (see previous work on SIMD)
-
-# assign the appropriate SIMD value to a record depending on the year
-simd_pop_estimates_1 <- simd_pop_estimates_1 %>%
-  mutate(simd = case_when(
-    schlyr_exam %in% c("1011", "1112", "1213", "1314") 
-    ~ simd2012_sc_quintile,
-    schlyr_exam %in% c("0708", "0809", "0910") 
-    ~ simd2009v2_sc_quintile,
-    schlyr_exam %in% c("0405", "0506", "0607") 
-    ~ simd2006_sc_quintile,
-    schlyr_exam %in% c("0102", "0203", "0304") 
-    ~ simd2004_sc_quintile
-  ))
-
-# create totals for simd_population_estimates_1
-# all participating boards
-simd_pop_estimates_1 <- rbind(simd_pop_estimates_1 %>% 
-                                group_by(simd, schlyr_exam)%>%
-                                summarise(pop = sum(pop)) %>% ungroup())
-
-
-# create population file from the GRO mid year population estimates
-# of five year olds by simd (for years 14/15 to current year)
-simd_pop_estimates_2 <- readRDS(paste0(
-  lookup_folder, "/Unicode/Populations/Estimates/DataZone2011_pop_est_2011_2018.rds")) %>%
-  select(year, datazone2011, sex, age5, simd2016_sc_quintile)
-
-simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
-  rename(pop = age5) %>%
-  filter(year >= 2014 & year <=2017) %>% 
-  mutate(schlyr_exam = case_when(year == 2014 ~ "1415",
-                                 year == 2015 ~ "1516",
-                                 year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718"))
-
-# assign the appropriate SIMD value to a record depending on the year
-simd_pop_estimates_2 <- simd_pop_estimates_2 %>%
-  mutate(simd = case_when(
-    schlyr_exam %in% c("1415", "1516", "1617", "1718") 
-    ~ simd2016_sc_quintile
-  ))
-
-# create totals for simd_population_estimates_2
-# all participating boards
-simd_pop_estimates_2 <- rbind(simd_pop_estimates_2 %>% 
-                                group_by(simd, schlyr_exam)%>%
-                                summarise(pop = sum(pop)) %>% ungroup())
-
-
-# Match the two simd populations files together
-simd_pop_estimates <- rbind(simd_pop_estimates_1, simd_pop_estimates_2)
-
 
 # create totals for simd (simd_data)
 # all participating boards
 simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
                      summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
-# add simd_data to simd_population_estimates
-simd_data <- left_join(simd_data, simd_pop_estimates, 
-                       by = c("simd", "schlyr_exam"))
+# rename the variables 
+simd_data <- simd_data %>%
+  rename(total_reviews = tot,
+         num_epi_undw = cent_grp1,
+         num_epi_hw = cent_grp2,
+         num_epi_over = cent_grp3,
+         num_epi_obe = cent_grp4,
+         num_epi_overobe = cent_grp5,
+         num_clin_undw = clin_cent_grp1,
+         num_clin_hw = clin_cent_grp2,
+         num_clin_over = clin_cent_grp3,
+         num_clin_obe = clin_cent_grp4,
+         num_clin_sobe = clin_cent_grp5,
+         num_clin_overwplus = clin_cent_grp6,
+         num_clin_obeplus = clin_cent_grp7)
 
+# call the function to calculate percentages in each category
+simd_data <- apply_percentage_calc(simd_data)
+
+
+# select the variables needed for both the excel tables and open data
+simd_data <- simd_data %>%
+  subset(select = c(simd, schlyr_exam, total_reviews, 
+                    num_epi_undw, num_epi_hw, num_epi_over,
+                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                    num_clin_over, num_clin_obe, num_clin_sobe, 
+                    num_clin_overwplus, num_clin_obeplus, 
+                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                    per_epi_overobe, 
+                    per_clin_undw, per_clin_hw, per_clin_over,
+                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                    per_clin_obeplus))
 
 # save as csv file
 write_csv(simd_data, paste0(host_folder, "Output/simd_data.csv"))
