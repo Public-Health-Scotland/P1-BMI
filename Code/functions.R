@@ -32,41 +32,44 @@ apply_hb2019_cypher <- function(df) {
 }
 
 # function to calculate confidence intervals
-calculate_ci <- function(df) {
+apply_ci_calculation <- function(df) {
   df <- df %>%
     mutate(pcf = (pop - tot)/(pop - 1),
-           n_undw = cent_grp1,
-           n_hw = cent_grp2,
-           n_over = cent_grp3,
-           n_obe = cent_grp4,
-           n_overobe = cent_grp5,
-           n_clin_undw = clin_cent_grp1,
-           n_clin_hw = clin_cent_grp2,
-           n_clin_over = clin_cent_grp3,
-           n_clin_obe = clin_cent_grp4,
-           n_clin_sobe = clin_cent_grp5,
-           n_clin_overwplus = clin_cent_grp6,
-           n_clin_obeplus = clin_cent_grp7)
+           num_epi_undw = cent_grp1,
+           num_epi_hw = cent_grp2,
+           num_epi_over = cent_grp3,
+           num_epi_obe = cent_grp4,
+           num_epi_overobe = cent_grp5,
+           num_clin_undw = clin_cent_grp1,
+           num_clin_hw = clin_cent_grp2,
+           num_clin_over = clin_cent_grp3,
+           num_clin_obe = clin_cent_grp4,
+           num_clin_sobe = clin_cent_grp5,
+           num_clin_overwplus = clin_cent_grp6,
+           num_clin_obeplus = clin_cent_grp7)
 
-  for (weight_group_epi in c("undw", "hw", "over", "obe", "overobe")) {
+  for (weight_group in c("epi_undw", "epi_hw", "epi_over", "epi_obe", 
+                         "epi_overobe", "clin_undw", "clin_hw", "clin_over",
+                         "clin_obe", "clin_sobe", "clin_overwplus",
+                         "clin_obeplus")) {
     df <-
       df %>% mutate(
-        !!paste0("p_", weight_group_epi) := get(paste0("n_", weight_group_epi)) /
+        !!paste0("p_", weight_group) := get(paste0("num_", weight_group)) /
           tot,
-        !!paste0("q_", weight_group_epi) := (1 - get(paste0(
-          "p_", weight_group_epi
+        !!paste0("q_", weight_group) := (1 - get(paste0(
+          "p_", weight_group
         ))),
-        !!paste0(weight_group_epi, "_bmi") := get(paste0("n_", weight_group_epi)) /
+        !!paste0(weight_group, "_bmi") := get(paste0("num_", weight_group)) /
           tot,
-        !!paste0(weight_group_epi, "_lci") := (get(paste0(
-          "p_", weight_group_epi
+        !!paste0(weight_group, "_lci") := (get(paste0(
+          "p_", weight_group
         )) - 1.96 * sqrt(((
-          get(paste0("p_", weight_group_epi)) * get(paste0("q_", weight_group_epi))
+          get(paste0("p_", weight_group)) * get(paste0("q_", weight_group))
         ) / tot) * (pcf))),
-        !!paste0(weight_group_epi, "_uci") := (get(paste0(
-          "p_", weight_group_epi
+        !!paste0(weight_group, "_uci") := (get(paste0(
+          "p_", weight_group
         )) + 1.96 * sqrt(((
-          get(paste0("p_", weight_group_epi)) * get(paste0("q_", weight_group_epi))
+          get(paste0("p_", weight_group)) * get(paste0("q_", weight_group))
         ) / tot) * (pcf)))
       )
   }
