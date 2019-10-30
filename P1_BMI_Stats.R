@@ -724,26 +724,28 @@ ca_data <- subset(ca_data, tot >50)
 ca_data <- left_join(ca_data, ca_pop_estimates, 
                      by = c("CA2019", "CA2019Name", "schlyr_exam"))
 
+
+# call the function to calculate confidence intervals
+ca_data <- apply_ci_calculation(ca_data)
+
 # rename the variables
-ca_data <- ca_data %>% 
-  mutate(total_reviews = tot,
-         num_epi_undw = cent_grp1,
-         num_epi_hw = cent_grp2,
-         num_epi_over = cent_grp3,
-         num_epi_obe = cent_grp4,
-         num_epi_overobe = cent_grp5,
-         num_clin_undw = clin_cent_grp1,
-         num_clin_hw = clin_cent_grp2,
-         num_clin_over = clin_cent_grp3,
-         num_clin_obe = clin_cent_grp4,
-         num_clin_sobe = clin_cent_grp5,
-         num_clin_overwplus = clin_cent_grp6,
-         num_clin_obeplus = clin_cent_grp7)
+ca_data <- ca_data %>%
+  rename(total_reviews = tot,
+         per_epi_undw = epi_undw_bmi,
+         per_epi_hw = epi_hw_bmi,
+         per_epi_over = epi_over_bmi,
+         per_epi_obe = epi_obe_bmi,
+         per_epi_overobe = epi_overobe_bmi,
+         per_clin_undw = clin_undw_bmi,
+         per_clin_hw = clin_hw_bmi,
+         per_clin_over = clin_over_bmi,
+         per_clin_obe = clin_obe_bmi,
+         per_clin_sobe = clin_sobe_bmi,
+         per_clin_overwplus = clin_overwplus_bmi,
+         per_clin_obeplus = clin_obeplus_bmi)
 
-# call the function to create the percentages for each category
-ca_data <- apply_percentage_calc(ca_data)
 
-# select only the variables needed
+# select the variables needed for both the excel tables and open data
 ca_data <- ca_data %>%
   subset(select = c(CA2019, CA2019Name, schlyr_exam,
                     total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
@@ -751,9 +753,18 @@ ca_data <- ca_data %>%
                     num_clin_over, num_clin_obe, num_clin_sobe, 
                     num_clin_overwplus, num_clin_obeplus, 
                     per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
-                    per_epi_overobe, per_clin_undw, per_clin_hw, per_clin_over,
+                    per_epi_overobe, 
+                    per_clin_undw, per_clin_hw, per_clin_over,
                     per_clin_obe, per_clin_sobe, per_clin_overwplus,
-                    per_clin_obeplus))
+                    per_clin_obeplus,
+                    epi_undw_lci, epi_undw_uci, epi_hw_lci, epi_hw_uci,
+                    epi_over_lci, epi_over_uci, epi_obe_lci, epi_obe_uci,
+                    epi_overobe_lci, epi_overobe_uci,
+                    clin_undw_lci, clin_undw_uci, clin_hw_lci, clin_hw_uci,
+                    clin_over_lci, clin_over_uci, clin_obe_lci, clin_obe_uci,
+                    clin_sobe_lci, clin_sobe_uci, 
+                    clin_overwplus_lci, clin_overwplus_uci,
+                    clin_obeplus_lci, clin_obeplus_uci))
 
 # save as csv file
 write_csv(ca_data, paste0(host_folder, "Output/ca_data.csv"))
