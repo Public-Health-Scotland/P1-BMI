@@ -901,7 +901,9 @@ simd_data <- simd_data %>%
          num_clin_obe = clin_cent_grp4,
          num_clin_sobe = clin_cent_grp5,
          num_clin_overwplus = clin_cent_grp6,
-         num_clin_obeplus = clin_cent_grp7) %>% 
+         num_clin_obeplus = clin_cent_grp7) %>%
+# replace simd 'na' values with zero
+tidyr::replace_na(list(simd = 0)) %>% 
 # create new variables for the location lookup
 mutate(location_cypher = simd,
        location_code = "APB",
