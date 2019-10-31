@@ -645,12 +645,40 @@ rename(total_reviews = tot,
        per_clin_obe = clin_obe_bmi,
        per_clin_sobe = clin_sobe_bmi,
        per_clin_overwplus = clin_overwplus_bmi,
-       per_clin_obeplus = clin_obeplus_bmi)
+       per_clin_obeplus = clin_obeplus_bmi) %>% 
+# create three new variables for board cypher, board code and board name
+mutate(location_cypher = hb2019_cypher,
+       location_code = substr(HB2019,8,9),
+       location_name = HB2019Name) %>%
+  mutate(location_lookup = paste0(location_cypher, location_code, schlyr_exam))
 
+# create output for the open data
+hb_open_data <- hb_data %>% 
+subset(select = c(HB2019, HB2019Name, hb2019_cypher, schlyr_exam,
+                  total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
+                  num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                  num_clin_over, num_clin_obe, num_clin_sobe, 
+                  num_clin_overwplus, num_clin_obeplus, 
+                  per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                  per_epi_overobe, 
+                  per_clin_undw, per_clin_hw, per_clin_over,
+                  per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                  per_clin_obeplus,
+                  epi_undw_lci, epi_undw_uci, epi_hw_lci, epi_hw_uci,
+                  epi_over_lci, epi_over_uci, epi_obe_lci, epi_obe_uci,
+                  epi_overobe_lci, epi_overobe_uci,
+                  clin_undw_lci, clin_undw_uci, clin_hw_lci, clin_hw_uci,
+                  clin_over_lci, clin_over_uci, clin_obe_lci, clin_obe_uci,
+                  clin_sobe_lci, clin_sobe_uci, 
+                  clin_overwplus_lci, clin_overwplus_uci,
+                  clin_obeplus_lci, clin_obeplus_uci))
+
+# save the open data file
+saveRDS(hb_open_data, paste0(host_folder, "OpenData/hb_open_data.rds"))
 
 # select the variables needed for both the excel tables and open data
 hb_data <- hb_data %>%
-  subset(select = c(HB2019, HB2019Name, hb2019_cypher, schlyr_exam,
+  subset(select = c(location_lookup, location_name,
                     total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
                     num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
                     num_clin_over, num_clin_obe, num_clin_sobe, 
@@ -659,15 +687,7 @@ hb_data <- hb_data %>%
                     per_epi_overobe, 
                     per_clin_undw, per_clin_hw, per_clin_over,
                     per_clin_obe, per_clin_sobe, per_clin_overwplus,
-                    per_clin_obeplus,
-                    epi_undw_lci, epi_undw_uci, epi_hw_lci, epi_hw_uci,
-                    epi_over_lci, epi_over_uci, epi_obe_lci, epi_obe_uci,
-                    epi_overobe_lci, epi_overobe_uci,
-                    clin_undw_lci, clin_undw_uci, clin_hw_lci, clin_hw_uci,
-                    clin_over_lci, clin_over_uci, clin_obe_lci, clin_obe_uci,
-                    clin_sobe_lci, clin_sobe_uci, 
-                    clin_overwplus_lci, clin_overwplus_uci,
-                    clin_obeplus_lci, clin_obeplus_uci))
+                    per_clin_obeplus))
 
 # save as csv file
 write_csv(hb_data, paste0(host_folder, "Output/hb_data.csv"))
@@ -742,11 +762,16 @@ ca_data <- ca_data %>%
          per_clin_obe = clin_obe_bmi,
          per_clin_sobe = clin_sobe_bmi,
          per_clin_overwplus = clin_overwplus_bmi,
-         per_clin_obeplus = clin_obeplus_bmi)
+         per_clin_obeplus = clin_obeplus_bmi) %>% 
+# create dummy location cypher for council area data and two new variables
+# for location code and location name
+mutate(location_cypher = 'CA',
+       location_code = substr(CA2019,8,9),
+       location_name = CA2019Name) %>% 
+  mutate(location_lookup = paste0(location_cypher, location_code, schlyr_exam))
 
-
-# select the variables needed for both the excel tables and open data
-ca_data <- ca_data %>%
+# create output for the open data
+ca_open_data <- ca_data %>%
   subset(select = c(CA2019, CA2019Name, schlyr_exam,
                     total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
                     num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
@@ -765,6 +790,22 @@ ca_data <- ca_data %>%
                     clin_sobe_lci, clin_sobe_uci, 
                     clin_overwplus_lci, clin_overwplus_uci,
                     clin_obeplus_lci, clin_obeplus_uci))
+
+# save the open data file
+saveRDS(ca_open_data, paste0(host_folder, "OpenData/ca_open_data.rds"))
+
+# select the variables needed for the excel tables
+ca_data <- ca_data %>%
+  subset(select = c(location_lookup, location_name,
+                    total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
+                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                    num_clin_over, num_clin_obe, num_clin_sobe, 
+                    num_clin_overwplus, num_clin_obeplus, 
+                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                    per_epi_overobe, 
+                    per_clin_undw, per_clin_hw, per_clin_over,
+                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                    per_clin_obeplus))
 
 # save as csv file
 write_csv(ca_data, paste0(host_folder, "Output/ca_data.csv"))
@@ -795,15 +836,36 @@ gender_data <- gender_data %>%
          num_clin_obe = clin_cent_grp4,
          num_clin_sobe = clin_cent_grp5,
          num_clin_overwplus = clin_cent_grp6,
-         num_clin_obeplus = clin_cent_grp7)
+         num_clin_obeplus = clin_cent_grp7) %>% 
+# create new variables for the location lookup
+mutate(location_cypher = sex,
+       location_code = "APB",
+       location_name = "All Participating Boards") %>% 
+  mutate(location_lookup = paste0(location_cypher, location_code, schlyr_exam))
 
 # call the function to calculate percentages in each weight category
 gender_data <- apply_percentage_calc(gender_data)
 
-
-# select the variables needed for both the excel tables and open data
-gender_data <- gender_data %>%
+# create output for the open data
+gender_open_data <- gender_data %>% 
   subset(select = c(sex, schlyr_exam, total_reviews, 
+                    num_epi_undw, num_epi_hw, num_epi_over,
+                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                    num_clin_over, num_clin_obe, num_clin_sobe, 
+                    num_clin_overwplus, num_clin_obeplus, 
+                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                    per_epi_overobe, 
+                    per_clin_undw, per_clin_hw, per_clin_over,
+                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                    per_clin_obeplus))
+
+# save the open data file
+saveRDS(gender_open_data, paste0(host_folder, "OpenData/gender_open_data.rds"))
+
+
+# select the variables needed for the excel tables
+gender_data <- gender_data %>%
+  subset(select = c(location_lookup, location_name, total_reviews, 
                     num_epi_undw, num_epi_hw, num_epi_over,
                     num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
                     num_clin_over, num_clin_obe, num_clin_sobe, 
@@ -839,15 +901,35 @@ simd_data <- simd_data %>%
          num_clin_obe = clin_cent_grp4,
          num_clin_sobe = clin_cent_grp5,
          num_clin_overwplus = clin_cent_grp6,
-         num_clin_obeplus = clin_cent_grp7)
+         num_clin_obeplus = clin_cent_grp7) %>% 
+# create new variables for the location lookup
+mutate(location_cypher = simd,
+       location_code = "APB",
+       location_name = "All Participating Boards") %>% 
+mutate(location_lookup = paste0(location_cypher, location_code, schlyr_exam))
 
 # call the function to calculate percentages in each weight category
 simd_data <- apply_percentage_calc(simd_data)
 
-
-# select the variables needed for both the excel tables and open data
-simd_data <- simd_data %>%
+# create output for the open data
+simd_open_data <- simd_data %>%
   subset(select = c(simd, schlyr_exam, total_reviews, 
+                    num_epi_undw, num_epi_hw, num_epi_over,
+                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
+                    num_clin_over, num_clin_obe, num_clin_sobe, 
+                    num_clin_overwplus, num_clin_obeplus, 
+                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
+                    per_epi_overobe, 
+                    per_clin_undw, per_clin_hw, per_clin_over,
+                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
+                    per_clin_obeplus))
+
+# save the open data file
+saveRDS(simd_open_data, paste0(host_folder, "OpenData/simd_open_data.rds"))
+
+# select the variables needed for the excel tables
+simd_data <- simd_data %>%
+  subset(select = c(location_lookup, total_reviews, 
                     num_epi_undw, num_epi_hw, num_epi_over,
                     num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
                     num_clin_over, num_clin_obe, num_clin_sobe, 
@@ -860,6 +942,13 @@ simd_data <- simd_data %>%
 
 # save as csv file
 write_csv(simd_data, paste0(host_folder, "Output/simd_data.csv"))
+
+
+### creating excel tables
+
+# combine the hb, ca, gender and simd files together into one data file
+
+
 
 
 ### data completeness
