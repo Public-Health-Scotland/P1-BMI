@@ -689,10 +689,6 @@ hb_data <- hb_data %>%
                     per_clin_obe, per_clin_sobe, per_clin_overwplus,
                     per_clin_obeplus))
 
-# save as csv file
-write_csv(hb_data, paste0(host_folder, "Output/hb_data.csv"))
-
-
 
 ### Council area analysis
 
@@ -807,9 +803,6 @@ ca_data <- ca_data %>%
                     per_clin_obe, per_clin_sobe, per_clin_overwplus,
                     per_clin_obeplus))
 
-# save as csv file
-write_csv(ca_data, paste0(host_folder, "Output/ca_data.csv"))
-
 
 ### Gender analysis
 
@@ -876,9 +869,6 @@ gender_data <- gender_data %>%
                     per_clin_obe, per_clin_sobe, per_clin_overwplus,
                     per_clin_obeplus))
 
-# save as csv file
-write_csv(gender_data, paste0(host_folder, "Output/gender_data.csv"))
-
 
 ### simd analysis
 
@@ -931,7 +921,7 @@ saveRDS(simd_open_data, paste0(host_folder, "OpenData/simd_open_data.rds"))
 
 # select the variables needed for the excel tables
 simd_data <- simd_data %>%
-  subset(select = c(location_lookup, total_reviews, 
+  subset(select = c(location_lookup, location_name, total_reviews, 
                     num_epi_undw, num_epi_hw, num_epi_over,
                     num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
                     num_clin_over, num_clin_obe, num_clin_sobe, 
@@ -942,15 +932,13 @@ simd_data <- simd_data %>%
                     per_clin_obe, per_clin_sobe, per_clin_overwplus,
                     per_clin_obeplus))
 
-# save as csv file
-write_csv(simd_data, paste0(host_folder, "Output/simd_data.csv"))
 
-
-### creating excel tables
+### creating data for excel tables
 
 # combine the hb, ca, gender and simd files together into one data file
+bmi_all_data <- bind_rows(hb_data, ca_data, gender_data, simd_data)
 
-
+write_csv(bmi_all_data, paste0(host_folder, "Output/bmi_all_data.csv"))
 
 
 ### data completeness
@@ -984,8 +972,14 @@ sco_pop_estimates <- sco_pop_estimates %>%
 # Scotland level population estimates by year
 sco_pop_estimates <- rbind(sco_pop_estimates %>% 
                              group_by(schlyr_exam) %>%
-                             summarise(pop = sum(pop)) %>%
-                             mutate(HB2019 = "Total") %>% ungroup())
+                             summarise(population = sum(pop)) %>%
+                             mutate(HB2019 = "CoverageAPB") %>% ungroup())
+
+# create location_lookup variable for excel tables
+sco_pop_estimates <- sco_pop_estimates %>% 
+mutate(location_lookup = paste0(HB2019, schlyr_exam)) %>% 
+  subset(select = c(location_lookup, population))
+
 
 # save as excel file
 write_csv(sco_pop_estimates, paste0(host_folder, "Output/scotland_pop.csv"))
