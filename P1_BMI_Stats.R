@@ -973,16 +973,13 @@ sco_pop_estimates <- sco_pop_estimates %>%
 sco_pop_estimates <- rbind(sco_pop_estimates %>% 
                              group_by(schlyr_exam) %>%
                              summarise(population = sum(pop)) %>%
-                             mutate(HB2019 = "CoverageAPB") %>% ungroup())
+                             mutate(HB2019 = "CoverageScot") %>% ungroup())
 
 # create location_lookup variable for excel tables
 sco_pop_estimates <- sco_pop_estimates %>% 
 mutate(location_lookup = paste0(HB2019, schlyr_exam)) %>% 
   subset(select = c(location_lookup, population))
 
-
-# save as excel file
-write_csv(sco_pop_estimates, paste0(host_folder, "Output/scotland_pop.csv"))
 
 
 # board level completeness
@@ -998,7 +995,7 @@ hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
 # Scotland level (all participating boards)
                        bmi_data_coverage %>% group_by(schlyr_exam) %>% 
                          summarise(total_reviews = sum(count)) %>%
-                         mutate(HB2019 = "Total") %>% ungroup())
+                         mutate(HB2019 = "CoverageAPB") %>% ungroup())
 
 
 # create totals for the number of records with a valid height and weight
@@ -1011,7 +1008,13 @@ hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
 # Scotland level (all participating boards)
                              bmi_basefile %>% group_by(schlyr_exam) %>%
                                summarise(valid_reviews = sum(count)) %>%
-                               mutate(HB2019 = "Total") %>% ungroup())
+                               mutate(HB2019 = "CoverageAPB") %>% ungroup())
+
+# change the "Total" in the hb pop estimates file to match the same format
+# as the hb valid reviews and reviews file (i.e. "CoverageAPB")
+### still need to fix this ###
+test_hb_pop_estimates <- hb_pop_estimates %>% 
+  mutate(HB2019 = case_when(HB2019 == "Total" ~ "CoverageAPB"))
 
 # Add all health board files (population, all P1 reviews and
 # P1 reviews with valid h&w measurements)
