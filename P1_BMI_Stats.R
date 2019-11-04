@@ -605,17 +605,19 @@ hb_pop_estimates <- hb_pop_estimates %>%
 # participating boards (for hb_pop_estimates)
 # Board level
 hb_pop_estimates <- rbind(hb_pop_estimates %>% 
-                            group_by(HB2019, schlyr_exam)%>%
+                            group_by(HB2019, hb2019_cypher,
+                                     schlyr_exam)%>%
                             summarise(pop = sum(pop)) %>% ungroup(),
                           # Scotland level (all participating boards)
                           hb_pop_estimates %>% group_by(schlyr_exam) %>%
                             summarise(pop = sum(pop)) %>%
-                            mutate(HB2019 = "Total") %>% ungroup())
+                            mutate(HB2019 = "Total",
+                                   hb2019_cypher = "Total") %>% ungroup())
 
 # create totals for individual hb and all participating boards (for hb_data)
 # Board level
-hb_data <- bind_rows(bmi_basefile %>% group_by(HB2019, HB2019Name, hb2019_cypher,
-                                           schlyr_exam) %>%
+hb_data <- bind_rows(bmi_basefile %>% group_by(HB2019, HB2019Name, 
+                                               hb2019_cypher, schlyr_exam) %>%
                    summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup(),
                  # Scotland level (all participating boards)
                  bmi_basefile %>% group_by(schlyr_exam) %>% 
@@ -626,7 +628,7 @@ hb_data <- bind_rows(bmi_basefile %>% group_by(HB2019, HB2019Name, hb2019_cypher
 
 # Match hb data to hb population estimates
 hb_data <- left_join(hb_data, hb_pop_estimates, 
-                     by = c("HB2019", "schlyr_exam"))
+                     by = c("HB2019", "hb2019_cypher", "schlyr_exam"))
 
 # call the function to calculate confidence intervals
 hb_data <- apply_ci_calculation(hb_data)
@@ -933,17 +935,10 @@ simd_data <- simd_data %>%
                     per_clin_obeplus))
 
 
-### creating data for excel tables
-
-# combine the hb, ca, gender and simd files together into one data file
-bmi_all_data <- bind_rows(hb_data, ca_data, gender_data, simd_data)
-
-write_csv(bmi_all_data, paste0(host_folder, "Output/bmi_all_data.csv"))
-
-
 ### data completeness
 
-# calculate scotland population estimates
+## calculate scotland population estimates
+
 sco_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
@@ -982,7 +977,8 @@ mutate(location_lookup = paste0(HB2019, schlyr_exam)) %>%
 
 
 
-# board level completeness
+##  board level completeness
+
 bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
 # create totals for the number of records with and without a valid height and 
@@ -990,12 +986,17 @@ bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 # create a variable for the total number of reviews
 bmi_data_coverage <- bmi_data_coverage %>% mutate(count = 1)
 # board level
-hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
+hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(hb2019_cypher,
+                                                      HB2019Name,schlyr_exam) %>%
                          summarise(total_reviews = sum(count))  %>% ungroup(),
 # Scotland level (all participating boards)
                        bmi_data_coverage %>% group_by(schlyr_exam) %>% 
                          summarise(total_reviews = sum(count)) %>%
-                         mutate(HB2019 = "CoverageAPB") %>% ungroup())
+                         mutate(hb2019_cypher = "APB",
+                                HB2019Name = "APB") %>% ungroup()) %>%
+# create location_lookup variable for excel tables
+  mutate(location_lookup = paste0(hb2019_cypher, schlyr_exam)) %>% 
+  subset(select = c(location_lookup, HB2019Name, total_reviews))
 
 
 # create totals for the number of records with a valid height and weight
@@ -1003,54 +1004,96 @@ hb_p1rev_data <- rbind(bmi_data_coverage %>% group_by(HB2019, schlyr_exam) %>%
 # create a variable for the total number of valid reviews
 bmi_basefile <- bmi_basefile %>% mutate(count = 1) 
 # board level  
-hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
-                               summarise(valid_reviews = sum(count))  %>% ungroup(),
+hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(hb2019_cypher,
+                                                       HB2019Name, 
+                                                       schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count))  %>%
+                               ungroup(),
 # Scotland level (all participating boards)
                              bmi_basefile %>% group_by(schlyr_exam) %>%
                                summarise(valid_reviews = sum(count)) %>%
-                               mutate(HB2019 = "CoverageAPB") %>% ungroup())
+                               mutate(hb2019_cypher = "APB",
+                                      HB2019Name = "APB") %>%
+                                      ungroup()) %>% 
+# create location_lookup variable for excel tables
+mutate(location_lookup = paste0(hb2019_cypher, schlyr_exam)) %>% 
+  subset(select = c(location_lookup, HB2019Name, valid_reviews))
+
 
 # change the "Total" in the hb pop estimates file to match the same format
 # as the hb valid reviews and reviews file (i.e. "CoverageAPB")
-### still need to fix this ###
-test_hb_pop_estimates <- hb_pop_estimates %>% 
-  mutate(HB2019 = case_when(HB2019 == "Total" ~ "CoverageAPB"))
+hb_pop_estimates <- hb_pop_estimates %>% 
+  mutate(hb2019_cypher = case_when(hb2019_cypher == "Total" ~ "APB",
+                            TRUE ~ hb2019_cypher)) %>% 
+  # create location_lookup variable for excel tables
+  mutate(location_lookup = paste0(hb2019_cypher, schlyr_exam)) %>% 
+  subset(select = c(location_lookup, pop))
 
 # Add all health board files (population, all P1 reviews and
 # P1 reviews with valid h&w measurements)
 hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data, 
-                                  by = c("HB2019", "schlyr_exam")) %>% 
-        full_join(hb_valid_p1rev_data, by = c("HB2019", "schlyr_exam"))
+                                  by = c("location_lookup")) %>% 
+        full_join(hb_valid_p1rev_data, by = c("location_lookup")) %>% 
+  rename(location_name = HB2019Name.x) %>% 
+  subset(select = c(location_lookup, location_name, valid_reviews,
+                    total_reviews, pop)) %>% 
+  mutate(location_lookup = paste0("Coverage", location_lookup))
 
-# save as excel file
-write_csv(hb_completeness_data, paste0(host_folder, 
-                                       "Output/hb_completeness_data.csv"))
 
+## council area completeness
 
-# council area completeness
 # create totals for the number of records with and without a valid height and 
 # weight for individual council area (for bmi_data_coverage)
 ca_p1rev_data <- rbind(bmi_data_coverage %>% 
-                         group_by(CA2019, schlyr_exam)%>%
-                         summarise(total_reviews = sum(count)) %>% ungroup())
+                         group_by(CA2019, CA2019Name, schlyr_exam)%>%
+                         summarise(total_reviews = sum(count)) %>% 
+                         ungroup()) %>% 
+  mutate(CA2019_code = substr(CA2019,8,9)) %>% 
+  mutate(location_lookup = paste0(CA2019_code, schlyr_exam)) %>% 
+  rename(location_name = CA2019Name) %>% 
+  subset(select = c(location_lookup, location_name, total_reviews))
 
 # create totals for the number of records with a valid height and weight
 # for individual council area (for bmi_basefile)
-ca_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(CA2019, schlyr_exam) %>%
+ca_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(CA2019, CA2019Name,
+                                                       schlyr_exam) %>%
                                summarise(valid_reviews = sum(count))  %>% 
-                               ungroup())
+                               ungroup()) %>%
+  mutate(CA2019_code = substr(CA2019,8,9)) %>% 
+  mutate(location_lookup = paste0(CA2019_code, schlyr_exam)) %>% 
+  rename(location_name = CA2019Name) %>% 
+  subset(select = c(location_lookup, location_name, valid_reviews))
+
+# change the format of the ca_pop_estimates lookup file to match
+# the two council area files that are going to be matched together
+ca_pop_estimates <- ca_pop_estimates %>% 
+  mutate(CA2019_code = substr(CA2019,8,9)) %>% 
+  mutate(location_lookup = paste0(CA2019_code, schlyr_exam)) %>% 
+  rename(location_name = CA2019Name) %>% 
+  subset(select = c(location_lookup, location_name, pop))
 
 # Add all council area files (population, all P1 reviews and
 # P1 reviews with valid h&w measurements)
 ca_completeness_data <- full_join(ca_pop_estimates, ca_p1rev_data, 
-                                  by = c("CA2019", "schlyr_exam")) %>% 
-  full_join(ca_valid_p1rev_data, by = c("CA2019", "schlyr_exam")) %>% 
-subset(total_reviews >50)
+                                  by = c("location_lookup", "location_name")) %>% 
+  full_join(ca_valid_p1rev_data, by = c("location_lookup", "location_name")) %>% 
+subset(total_reviews >50) %>% 
+  subset(select = c(location_lookup, location_name, valid_reviews,
+                    total_reviews, pop)) %>% 
+  mutate(location_lookup = paste0("Coverage", location_lookup))
 
 
-# save as csv file
-write_csv(ca_completeness_data, paste0(host_folder,
-                                       "Output/ca_completeness_data.csv"))
+### creating data for excel tables
+
+# add all files together to create one data file for the excel tables
+# files included are hb, ca, gender, simd, scotland population file, 
+# hb coverage file and ca coverage file
+bmi_all_data <- bind_rows(hb_data, ca_data, gender_data, simd_data,
+                          sco_pop_estimates, hb_completeness_data,
+                          ca_completeness_data)
+
+write_csv(bmi_all_data, paste0(host_folder, "Output/bmi_all_data.csv"))
+
 
 
 ### END OF SCRIPT ### ----
