@@ -1038,7 +1038,8 @@ hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data,
   rename(population = pop) %>% 
   subset(select = c(location_lookup, location_name, valid_reviews,
                     total_reviews, population)) %>% 
-  mutate(location_lookup = paste0("Coverage", location_lookup))
+  mutate(location_lookup = paste0("Coverage", location_lookup)) %>% 
+  mutate(perc_coverage = valid_reviews/population)
 
 
 ## council area completeness
@@ -1082,7 +1083,8 @@ ca_completeness_data <- full_join(ca_pop_estimates, ca_p1rev_data,
 subset(total_reviews >50) %>% 
   subset(select = c(location_lookup, location_name, valid_reviews,
                     total_reviews, population)) %>% 
-  mutate(location_lookup = paste0("Coverage", location_lookup))
+  mutate(location_lookup = paste0("Coverage", location_lookup)) %>% 
+  mutate(perc_coverage = valid_reviews/population)
 
 
 ### creating data for excel tables
