@@ -1035,8 +1035,9 @@ hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data,
                                   by = c("location_lookup")) %>% 
         full_join(hb_valid_p1rev_data, by = c("location_lookup")) %>% 
   rename(location_name = HB2019Name.x) %>% 
+  rename(population = pop) %>% 
   subset(select = c(location_lookup, location_name, valid_reviews,
-                    total_reviews, pop)) %>% 
+                    total_reviews, population)) %>% 
   mutate(location_lookup = paste0("Coverage", location_lookup))
 
 
@@ -1070,7 +1071,8 @@ ca_pop_estimates <- ca_pop_estimates %>%
   mutate(CA2019_code = substr(CA2019,8,9)) %>% 
   mutate(location_lookup = paste0(CA2019_code, schlyr_exam)) %>% 
   rename(location_name = CA2019Name) %>% 
-  subset(select = c(location_lookup, location_name, pop))
+  rename(population = pop) %>% 
+  subset(select = c(location_lookup, location_name, population))
 
 # Add all council area files (population, all P1 reviews and
 # P1 reviews with valid h&w measurements)
@@ -1079,7 +1081,7 @@ ca_completeness_data <- full_join(ca_pop_estimates, ca_p1rev_data,
   full_join(ca_valid_p1rev_data, by = c("location_lookup", "location_name")) %>% 
 subset(total_reviews >50) %>% 
   subset(select = c(location_lookup, location_name, valid_reviews,
-                    total_reviews, pop)) %>% 
+                    total_reviews, population)) %>% 
   mutate(location_lookup = paste0("Coverage", location_lookup))
 
 
