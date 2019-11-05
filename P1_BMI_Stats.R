@@ -2,8 +2,8 @@
 # Population Health, Child Health: Primary 1 BMI Statistics Publication Syntax
 # Original Author: Russell McCreath
 # Original Date: February 2019
-# Latest update author:
-# Latest update date:
+# Latest update author: Michael Nisbett
+# Latest update date: November 2019
 # Latest update description:
 # Written/run on: R Studio 1.1.453
 # Version of R: 3.5.1
@@ -52,15 +52,15 @@ if (server_desktop == "server") {
 
 ## Variables
 # Current School/Financial Year (e.g. 1819)
-currentYr <- 1718
+current_year <- 1819
 
 
 ### 2 - Data Import / Inital Sort ----
 
 ## Import Data
 # Created R file for efficiency (SPSS syntax below)
-# bmi_data <- read_spss(paste(file.path(host_folder, "school_results.zsav")))
-bmi_data <- readRDS(paste(file.path(source_folder, "20181008", "School", "school_results.rds")))            #1.614m obs.
+bmi_data <- read_spss(paste(file.path(source_folder, "/20190812/School/school_results.zsav")))
+# bmi_data <- readRDS(paste(file.path(source_folder, "20190812", "School", "school_results.rds")))            #1.614m obs.
 
 ## Subset for required variables only
 bmi_data <- subset(bmi_data, select = c(chi, schlyr_exam, id, rev_num, schlgivn, height, weight, bmi,
@@ -70,7 +70,7 @@ bmi_data <- subset(bmi_data, select = c(chi, schlyr_exam, id, rev_num, schlgivn,
 ## Sort
 # Restrict to relevant years (var: schlyr_exam)
 bmi_data <- bmi_data %>%
-  filter(as.integer(schlyr_exam) >= 0102 & as.integer(schlyr_exam) <= 1718)       #1.541m obs.
+  filter(as.integer(schlyr_exam) >= 0102 & as.integer(schlyr_exam) <= current_year)       #1.541m obs.
 
 # Restrict to review number 60/61 (var: rev_num)
 bmi_data <- bmi_data %>%
@@ -222,19 +222,19 @@ bmi_data <- bmi_data %>%
 
 # call the function to select the relevant years
 bmi_data <- bmi_data %>%
-  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
-  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
-  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
-  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
-  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
-  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
-  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
-  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
-  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
-  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr)                              #650,904 obs.
+  apply_hb_year(HB = 'F', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = current_year) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = current_year) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = current_year) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = current_year) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = current_year) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = current_year) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = current_year) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = current_year) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = current_year) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = current_year)                              #650,904 obs.
 
 
 ### 5 - Child Data Sort/Analysis ----
@@ -541,12 +541,12 @@ bmi_basefile <- bmi_data %>%
                     clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, 
                     clin_cent_grp5, clin_cent_grp6, clin_cent_grp7))
 
-# This file contains data for school years 2001/02 to 2017/18 and should 
+# This file contains data for school years 2001/02 to current_year and should 
 # be used for information requests etc. so that any figures produced match 
-# those published in financial year 2017/18.
-saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1718.rds"))              #642,643 obs.
+# those published in current_year.
+saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1819.rds"))              #642,643 obs.
 
-bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1718.rds"))
+bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 
 
 ### Health board analysis
@@ -559,7 +559,7 @@ hb_pop_estimates <- readRDS(paste0(
 
 hb_pop_estimates <- hb_pop_estimates %>% 
   filter(age == 5) %>%
-  filter(year >= 2001 & year <=2017) %>% 
+  filter(year >= 2001 & year <=2018) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
                                  year == 2003 ~ "0304",
@@ -576,7 +576,8 @@ hb_pop_estimates <- hb_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718"))  
+                                 year == 2017 ~ "1718",
+                                 year == 2018 ~ "1819"))  
 
 # call the function for creating HB cypher
 hb_pop_estimates <- apply_hb2019_cypher(hb_pop_estimates) 
@@ -587,19 +588,19 @@ hb_pop_estimates <- hb_pop_estimates %>%
 
 # call the function for selecing the relevant year for each board
   hb_pop_estimates <- hb_pop_estimates %>%
-  apply_hb_year(HB = 'F', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'L', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'S', ey = 102, cy = currentYr) %>% 
-  apply_hb_year(HB = 'T', ey = 203, cy = currentYr) %>% 
-  apply_hb_year(HB = 'W', ey = 304, cy = currentYr) %>% 
-  apply_hb_year(HB = 'Y', ey = 405, cy = currentYr) %>% 
-  apply_hb_year(HB = 'V', ey = 506, cy = currentYr) %>% 
-  apply_hb_year(HB = 'G', ey = 607, cy = currentYr) %>% 
-  apply_hb_year(HB = 'A', ey = 708, cy = currentYr) %>% 
-  apply_hb_year(HB = 'H', ey = 809, cy = currentYr) %>% 
-  apply_hb_year(HB = 'Z', ey = 809, cy = currentYr) %>% 
-  apply_hb_year(HB = 'N', ey = 910, cy = currentYr) %>% 
-  apply_hb_year(HB = 'R', ey = 1011, cy = currentYr) 
+  apply_hb_year(HB = 'F', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = current_year) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = current_year) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = current_year) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = current_year) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = current_year) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = current_year) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = current_year) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = current_year) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = current_year) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = current_year) 
 
 # create totals for individual hb and all 
 # participating boards (for hb_pop_estimates)
@@ -702,7 +703,7 @@ ca_pop_estimates <- readRDS(paste0(
 
 ca_pop_estimates <- ca_pop_estimates %>% 
   filter(age == 5) %>%
-  filter(year >= 2001 & year <=2017) %>% 
+  filter(year >= 2001 & year <=2018) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
                                  year == 2003 ~ "0304",
@@ -719,7 +720,8 @@ ca_pop_estimates <- ca_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718"))  
+                                 year == 2017 ~ "1718",
+                                 year == 2018 ~ "1819"))  
 
 # create totals for individual council areas (for ca_pop_estimates)
 # council area level
@@ -945,7 +947,7 @@ sco_pop_estimates <- readRDS(paste0(
 
 sco_pop_estimates <- sco_pop_estimates %>% 
   filter(age == 5) %>%
-  filter(year >= 2001 & year <=2017) %>% 
+  filter(year >= 2001 & year <=2018) %>% 
   mutate(schlyr_exam = case_when(year == 2001 ~ "0102", 
                                  year == 2002 ~ "0203",
                                  year == 2003 ~ "0304",
@@ -962,7 +964,8 @@ sco_pop_estimates <- sco_pop_estimates %>%
                                  year == 2014 ~ "1415",
                                  year == 2015 ~ "1516",
                                  year == 2016 ~ "1617",
-                                 year == 2017 ~ "1718"))  
+                                 year == 2017 ~ "1718",
+                                 year == 2018 ~ "1819"))  
 
 # Scotland level population estimates by year
 sco_pop_estimates <- rbind(sco_pop_estimates %>% 
