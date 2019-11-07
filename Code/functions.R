@@ -1,3 +1,5 @@
+### functions for primary 1 bmi publication
+
 ## Select relevant years function
 apply_hb_year <- function(x, HB, ey, cy) {
   
@@ -93,5 +95,34 @@ apply_percentage_calc <- function(df) {
            per_clin_obeplus = num_clin_obeplus/total_reviews)
   return(df)
 }
+
+
+
+### Open data functions
+
+# function to change the format of school year e.g. "0102" to "2001/02"
+apply_school_year_format <- function(df) {
+  df <- df %>% 
+    mutate(SchoolYear = case_when(SchoolYear == "0102" ~ "2001/02",
+                                  SchoolYear == "0203" ~ "2002/03",
+                                  SchoolYear == "0304" ~ "2003/04",
+                                  SchoolYear == "0405" ~ "2004/05",
+                                  SchoolYear == "0506" ~ "2005/06",
+                                  SchoolYear == "0607" ~ "2006/07",
+                                  SchoolYear == "0708" ~ "2007/08",
+                                  SchoolYear == "0809" ~ "2008/09",
+                                  SchoolYear == "0910" ~ "2009/10",
+                                  SchoolYear == "1011" ~ "2010/11",
+                                  SchoolYear == "1112" ~ "2011/12",
+                                  SchoolYear == "1213" ~ "2012/13",
+                                  SchoolYear == "1314" ~ "2013/14",
+                                  SchoolYear == "1415" ~ "2014/15",
+                                  SchoolYear == "1516" ~ "2015/16",
+                                  SchoolYear == "1617" ~ "2016/17",
+                                  SchoolYear == "1718" ~ "2017/18",
+                                  SchoolYear == "1819" ~ "2018/19"))
+  return(df)
+}
+
 
 
