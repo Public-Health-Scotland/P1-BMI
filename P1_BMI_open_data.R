@@ -39,14 +39,14 @@ if (server_desktop == "server") {
 }
 
 
-# bmi basefile
+# read in bmi basefile
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 
-# coverage file
+# read in coverage file
 bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
 
-## HB level
+## HB analysis
 # start with the file created within the main P1 bmi script to create both
 # the epidemiological and clinical open data files
 hb_open_data <- readRDS(paste0(host_folder, "OpenData/hb_open_data.rds"))
@@ -132,12 +132,156 @@ hb_open_data_clin <- apply_school_year_format(hb_open_data_clin)
 write_csv(hb_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_Clin.csv"))
 
 
-
-
-
+## CA analysis
+# start with the file created within the main P1 bmi script to create both
+# the epidemiological and clinical open data files
 ca_open_data <- readRDS(paste0(host_folder, "OpenData/ca_open_data.rds"))
 
-gender_open_data <- readRDS(paste0(host_folder, "OpenData/gender_open_data.rds"))
+## hb epidemiological
+# rename variables
+ca_open_data_epi <- ca_open_data %>% 
+  rename(SchoolYear = schlyr_exam,
+         CA2011 = CA2019, 
+         ValidReviews = total_reviews,
+         EpiUnderweight = per_epi_undw,
+         LCIEpiUnderweight = epi_undw_lci,
+         UCIEpiUnderweight = epi_undw_uci,
+         EpiHealthyWeight = per_epi_hw,
+         LCIEpiHealthyWeight = epi_hw_lci,
+         UCIEpiHealthyWeight = epi_hw_uci,
+         EpiOverweight = per_epi_over,
+         LCIEpiOverweight = epi_over_lci,
+         UCIEpiOverweight = epi_over_uci,
+         EpiObese = per_epi_obe,
+         LCIEpiObese = epi_obe_lci,
+         UCIEpiObese = epi_obe_uci,
+         EpiOverweightAndObese = per_epi_overobe,
+         LCIEpiOverweightAndObese = epi_overobe_lci,
+         UCIEpiOverweightAndObese = epi_overobe_uci) %>%
+  subset(select = c(SchoolYear,	HBR2014,	ValidReviews,	EpiUnderweight,
+                    LCIEpiUnderweight,	UCIEpiUnderweight, EpiHealthyWeight,
+                    LCIEpiHealthyWeight,	UCIEpiHealthyWeight,	EpiOverweight,
+                    LCIEpiOverweight, UCIEpiOverweight,	EpiObese,	LCIEpiObese,
+                    UCIEpiObese,	EpiOverweightAndObese,
+                    LCIEpiOverweightAndObese, UCIEpiOverweightAndObese))
+
+# apply function to format school year
+ca_open_data_epi <- apply_school_year_format(ca_open_data_epi)
+
+# save ca epi file as csv
+write_csv(ca_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_CA_Epi.csv"))
+
+
+## ca clinical
+# rename variables
+ca_open_data_clin <- ca_open_data %>% 
+  rename(SchoolYear = schlyr_exam,
+         CA2011 = CA2019,
+         ValidReviews = total_reviews,
+         ClinUnderweight = per_clin_undw, 
+         LCIClinUnderweight = clin_undw_lci, 
+         UCIClinUnderweight = clin_undw_uci,
+         ClinHealthyWeight = per_clin_hw, 
+         LCIClinHealthyWeight = clin_hw_lci, 
+         UCIClinHealthyWeight = clin_hw_uci,
+         ClinOverweight = per_clin_over, 
+         LCIClinOverweight = clin_over_lci, 
+         UCIClinOverweight = clin_over_uci,
+         ClinObese = per_clin_obe, 
+         LCIClinObese = clin_obe_lci, 
+         UCIClinObese = clin_obe_uci, 
+         ClinSeverelyObese = per_clin_sobe, 
+         LCIClinSeverelyObese = clin_sobe_lci, 
+         UCIClinSeverelyObese = clin_sobe_uci, 
+         ClinOverweightObeseAndSeverelyObese = per_clin_overwplus, 
+         LCIClinOverweightObeseAndSeverelyObese = clin_overwplus_lci, 
+         UCIClinOverweightObeseAndSeverelyObese = clin_overwplus_uci,
+         ClinObeseAndSeverelyObese = per_clin_obeplus, 
+         LCIClinObeseAndSeverelyObese = clin_obeplus_lci, 
+         UCIClinObeseAndSeverelyObese = clin_obeplus_uci) %>%
+  subset(select = c(SchoolYear,	HBR2014,	ValidReviews,	ClinUnderweight,
+                    LCIClinUnderweight, UCIClinUnderweight,	ClinHealthyWeight,
+                    LCIClinHealthyWeight,	UCIClinHealthyWeight, ClinOverweight,
+                    LCIClinOverweight,	UCIClinOverweight,	ClinObese,
+                    LCIClinObese,	UCIClinObese,	ClinSeverelyObese,
+                    LCIClinSeverelyObese,	UCIClinSeverelyObese,	
+                    ClinOverweightObeseAndSeverelyObese,
+                    LCIClinOverweightObeseAndSeverelyObese,
+                    UCIClinOverweightObeseAndSeverelyObese,	
+                    ClinObeseAndSeverelyObese, LCIClinObeseAndSeverelyObese,
+                    UCIClinObeseAndSeverelyObese))  
+
+# apply function to format school year
+ca_open_data_clin <- apply_school_year_format(ca_open_data_clin) 
+
+# save hb clin file as csv
+write_csv(ca_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_Clin.csv"))
+
+
+
+### Gender analysis
+
+# use the bmi basefile as the starting point for both
+# epidemiological and clinical gender open data files
+gender_open_data <- rbind(bmi_basefile %>% 
+                            group_by(schlyr_exam, HB2019, sex) %>%
+                       summarise_at(vars(tot:clin_cent_grp7), sum) %>% 
+                         ungroup())
+
+# gender epidemiological
+# rename variables
+gender_open_data_epi <- gender_open_data %>% 
+  rename(SchoolYear = schlyr_exam,
+         HBR2014 = HB2019,
+         Sex = sex,
+         ValidReviews = tot,
+         EpiUnderweight = cent_grp1,
+         EpiHealthyWeight = cent_grp2,
+         EpiOverweight = cent_grp3,
+         EpiObese = cent_grp4,
+         EpiOverweightAndObese = cent_grp5) %>%
+  subset(select = c(SchoolYear,	HBR2014, Sex, ValidReviews,	EpiUnderweight,
+                    EpiHealthyWeight, EpiOverweight, 
+                    EpiObese,	EpiOverweightAndObese))
+
+# apply function to format school year
+gender_open_data_epi <- apply_school_year_format(gender_open_data_epi)
+
+# save hb epi file as csv
+write_csv(gender_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_Gender_Epi.csv"))
+
+
+# gender clinical
+# rename variables
+gender_open_data_clin <- gender_open_data %>% 
+  rename(SchoolYear = schlyr_exam,
+         HBR2014 = HB2019,
+         Sex = sex,
+         ValidReviews = tot,
+         ClinUnderweight = clin_cent_grp1,
+         ClinHealthyWeight = clin_cent_grp2,
+         ClinOverweight = clin_cent_grp3,
+         ClinObese = clin_cent_grp4,
+         ClinSeverelyObese = clin_cent_grp5,
+         ClinOverweightObeseAndSeverelyObese = clin_cent_grp6,
+         ClinObeseAndSeverelyObese = clin_cent_grp7) %>%
+  subset(select = c(SchoolYear, HBR2014, Sex,	ValidReviews,	ClinUnderweight,	
+                    ClinHealthyWeight, ClinOverweight, ClinObese,
+                    ClinSeverelyObese, ClinOverweightObeseAndSeverelyObese,
+                    ClinObeseAndSeverelyObese))
+
+# apply function to format school year
+gender_open_data_clin <- apply_school_year_format(gender_open_data_clin) 
+
+# save hb epi file as csv
+write_csv(gender_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_Gender_Clin.csv"))
+
+
+
+
+
+
+
 
 simd_open_data <- readRDS(paste0(host_folder, "OpenData/simd_open_data.rds"))
 
