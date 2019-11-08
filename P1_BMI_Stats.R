@@ -877,7 +877,6 @@ gender_data <- gender_data %>%
 ### simd analysis
 
 # create totals for simd (simd_data)
-# all participating boards
 simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
                      summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
