@@ -82,7 +82,7 @@ hb_open_data_epi <- hb_open_data %>%
 # apply function to format school year
 hb_open_data_epi <- apply_school_year_format(hb_open_data_epi)
 
-# save hb epi file as csv
+# save file as csv
 write_csv(hb_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_HB_Epi.csv"))
 
 
@@ -128,7 +128,7 @@ hb_open_data_clin <- hb_open_data %>%
 # apply function to format school year
 hb_open_data_clin <- apply_school_year_format(hb_open_data_clin) 
 
-# save hb clin file as csv
+# save file as csv
 write_csv(hb_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_Clin.csv"))
 
 
@@ -168,7 +168,7 @@ ca_open_data_epi <- ca_open_data %>%
 # apply function to format school year
 ca_open_data_epi <- apply_school_year_format(ca_open_data_epi)
 
-# save ca epi file as csv
+# save file as csv
 write_csv(ca_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_CA_Epi.csv"))
 
 
@@ -214,7 +214,7 @@ ca_open_data_clin <- ca_open_data %>%
 # apply function to format school year
 ca_open_data_clin <- apply_school_year_format(ca_open_data_clin) 
 
-# save hb clin file as csv
+# save file as csv
 write_csv(ca_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_Clin.csv"))
 
 
@@ -246,7 +246,7 @@ hb_gender_open_data_epi <- hb_gender_open_data %>%
 # apply function to format school year
 hb_gender_open_data_epi <- apply_school_year_format(hb_gender_open_data_epi)
 
-# save hb epi file as csv
+# save file as csv
 write_csv(hb_gender_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_HB_Gender_Epi.csv"))
 
 
@@ -272,7 +272,7 @@ hb_gender_open_data_clin <- hb_gender_open_data %>%
 # apply function to format school year
 hb_gender_open_data_clin <- apply_school_year_format(hb_gender_open_data_clin) 
 
-# save hb epi file as csv
+# save file as csv
 write_csv(hb_gender_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_Gender_Clin.csv"))
 
 
@@ -301,7 +301,7 @@ ca_gender_open_data_epi <- ca_gender_open_data %>%
 # apply function to format school year
 ca_gender_open_data_epi <- apply_school_year_format(ca_gender_open_data_epi)
 
-# save hb epi file as csv
+# save file as csv
 write_csv(ca_gender_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_CA_Gender_Epi.csv"))
 
 
@@ -327,7 +327,7 @@ ca_gender_open_data_clin <- ca_gender_open_data %>%
 # apply function to format school year
 ca_gender_open_data_clin <- apply_school_year_format(ca_gender_open_data_clin) 
 
-# save hb epi file as csv
+# save file as csv
 write_csv(ca_gender_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_Gender_Clin.csv"))
 
 
@@ -335,7 +335,7 @@ write_csv(ca_gender_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_Ge
 ### SIMD analysis for hb and ca
 
 # use the bmi basefile as the starting point for all simd open data files
-# simd epidemiological
+# hb simd epidemiological
 hb_simd_open_data <- rbind(bmi_basefile %>% group_by(simd, HB2019, schlyr_exam) %>%
                      summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
@@ -357,11 +357,11 @@ hb_simd_open_data_epi <- hb_simd_open_data %>%
 # apply function to format school year
 hb_simd_open_data_epi <- apply_school_year_format(hb_simd_open_data_epi)
 
-# save hb epi file as csv
+# save file as csv
 write_csv(hb_simd_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_HB_SIMD_Epi.csv"))
 
 
-# simd clinical
+# hb simd clinical
 # rename variables
 hb_simd_open_data_clin <- hb_simd_open_data %>% 
   rename(SchoolYear = schlyr_exam,
@@ -383,10 +383,61 @@ hb_simd_open_data_clin <- hb_simd_open_data %>%
 # apply function to format school year
 hb_simd_open_data_clin <- apply_school_year_format(hb_simd_open_data_clin) 
 
-# save hb epi file as csv
+# save file as csv
 write_csv(hb_simd_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_SIMD_Clin.csv"))
 
 
+# use the bmi basefile as the starting point for all simd open data files
+# ca simd epidemiological
+ca_simd_open_data <- rbind(bmi_basefile %>% group_by(simd, CA2019, schlyr_exam) %>%
+                             summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
+
+# rename variables
+ca_simd_open_data_epi <- ca_simd_open_data %>% 
+  rename(SchoolYear = schlyr_exam,
+         CA2011 = CA2019,
+         SIMD = simd,
+         ValidReviews = tot,
+         EpiUnderweight = cent_grp1,
+         EpiHealthyWeight = cent_grp2,
+         EpiOverweight = cent_grp3,
+         EpiObese = cent_grp4,
+         EpiOverweightAndObese = cent_grp5) %>%
+  subset(select = c(SchoolYear,	CA2011, SIMD, ValidReviews,	EpiUnderweight,
+                    EpiHealthyWeight, EpiOverweight, 
+                    EpiObese,	EpiOverweightAndObese))
+
+# apply function to format school year
+ca_simd_open_data_epi <- apply_school_year_format(ca_simd_open_data_epi)
+
+# save file as csv
+write_csv(ca_simd_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_CA_SIMD_Epi.csv"))
+
+
+# ca simd clinical
+# rename variables
+ca_simd_open_data_clin <- ca_simd_open_data %>% 
+  rename(SchoolYear = schlyr_exam,
+         CA2011 = CA2019,
+         SIMD = simd,
+         ValidReviews = tot,
+         ClinUnderweight = clin_cent_grp1,
+         ClinHealthyWeight = clin_cent_grp2,
+         ClinOverweight = clin_cent_grp3,
+         ClinObese = clin_cent_grp4,
+         ClinSeverelyObese = clin_cent_grp5,
+         ClinOverweightObeseAndSeverelyObese = clin_cent_grp6,
+         ClinObeseAndSeverelyObese = clin_cent_grp7) %>%
+  subset(select = c(SchoolYear, CA2011, SIMD,	ValidReviews,	ClinUnderweight,	
+                    ClinHealthyWeight, ClinOverweight, ClinObese,
+                    ClinSeverelyObese, ClinOverweightObeseAndSeverelyObese,
+                    ClinObeseAndSeverelyObese))
+
+# apply function to format school year
+ca_simd_open_data_clin <- apply_school_year_format(ca_simd_open_data_clin) 
+
+# save file as csv
+write_csv(ca_simd_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_SIMD_Clin.csv"))
 
 
 
