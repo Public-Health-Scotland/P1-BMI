@@ -843,23 +843,6 @@ mutate(location_cypher = sex,
 # call the function to calculate percentages in each weight category
 gender_data <- apply_percentage_calc(gender_data)
 
-# create output for the open data
-gender_open_data <- gender_data %>% 
-  subset(select = c(sex, schlyr_exam, total_reviews, 
-                    num_epi_undw, num_epi_hw, num_epi_over,
-                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
-                    num_clin_over, num_clin_obe, num_clin_sobe, 
-                    num_clin_overwplus, num_clin_obeplus, 
-                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
-                    per_epi_overobe, 
-                    per_clin_undw, per_clin_hw, per_clin_over,
-                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
-                    per_clin_obeplus))
-
-# save the open data file
-saveRDS(gender_open_data, paste0(host_folder, "OpenData/gender_open_data.rds"))
-
-
 # select the variables needed for the excel tables
 gender_data <- gender_data %>%
   subset(select = c(location_lookup, location_name, total_reviews, 
@@ -905,22 +888,6 @@ mutate(location_lookup = paste0(location_cypher, location_code, schlyr_exam))
 
 # call the function to calculate percentages in each weight category
 simd_data <- apply_percentage_calc(simd_data)
-
-# create output for the open data
-simd_open_data <- simd_data %>%
-  subset(select = c(simd, schlyr_exam, total_reviews, 
-                    num_epi_undw, num_epi_hw, num_epi_over,
-                    num_epi_obe, num_epi_overobe, num_clin_undw, num_clin_hw,
-                    num_clin_over, num_clin_obe, num_clin_sobe, 
-                    num_clin_overwplus, num_clin_obeplus, 
-                    per_epi_undw, per_epi_hw, per_epi_over, per_epi_obe,
-                    per_epi_overobe, 
-                    per_clin_undw, per_clin_hw, per_clin_over,
-                    per_clin_obe, per_clin_sobe, per_clin_overwplus,
-                    per_clin_obeplus))
-
-# save the open data file
-saveRDS(simd_open_data, paste0(host_folder, "OpenData/simd_open_data.rds"))
 
 # select the variables needed for the excel tables
 simd_data <- simd_data %>%
