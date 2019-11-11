@@ -557,6 +557,7 @@ hb_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
 
+# call the function for filtering the population estimate file
 hb_pop_estimates <- apply_pop_est_filter(hb_pop_estimates)
 
 # call the function for creating HB cypher
@@ -681,6 +682,7 @@ ca_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/CA2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
 
+# call the function for filtering the population estimate file
 ca_pop_estimates <- apply_pop_est_filter(ca_pop_estimates)
 
 
@@ -872,6 +874,7 @@ sco_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
 
+# call the function for filtering the population estimate file
 sco_pop_estimates <- apply_pop_est_filter(sco_pop_estimates)
 
 # Scotland level population estimates by year
