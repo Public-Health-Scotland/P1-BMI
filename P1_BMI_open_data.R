@@ -38,6 +38,10 @@ if (server_desktop == "server") {
   lookup_folder <-"//Isdsf00d03/cl-out/lookups"
 }
 
+## Variables
+# Current School/Financial Year (e.g. 1819)
+current_year <- 1819
+
 
 # read in bmi basefile
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
@@ -438,6 +442,93 @@ ca_simd_open_data_clin <- apply_school_year_format(ca_simd_open_data_clin)
 
 # save file as csv
 write_csv(ca_simd_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_SIMD_Clin.csv"))
+
+
+### HB coverage
+bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
+
+## create totals for the number of records with and without a valid height and 
+## weight for individual hb and add the population estimates
+
+# create a variable for the total number of reviews
+bmi_data_coverage <- bmi_data_coverage %>% mutate(count = 1)
+# board level
+hb_p1rev_open_data <- rbind(bmi_data_coverage %>% group_by(HB2019 ,schlyr_exam) %>%
+                         summarise(total_reviews = sum(count))  %>% ungroup())
+
+# create a variable for the total number of valid reviews
+bmi_basefile <- bmi_basefile %>% mutate(count = 1) 
+# board level  
+hb_valid_p1rev_open_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count))  %>%
+                               ungroup())
+
+# create population estimate 
+hb_open_data_pop_estimates <- readRDS(paste0(
+  lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop)
+
+# call the function for filtering the population estimate file
+hb_open_data_pop_estimates <- apply_pop_est_filter(hb_open_data_pop_estimates)
+
+# call the function for creating HB cypher
+hb_open_data_pop_estimates <- apply_hb2019_cypher(hb_open_data_pop_estimates) 
+
+# Exclude schlyr 02/03 from Borders data
+hb_open_data_pop_estimates <- hb_open_data_pop_estimates %>%
+  subset(!(hb2019_cypher == 'B' & schlyr_exam == '0203'))
+
+# call the function for selecing the relevant year for each board
+hb_open_data_pop_estimates <- hb_open_data_pop_estimates %>%
+  apply_hb_year(HB = 'F', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'L', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'S', ey = 102, cy = current_year) %>% 
+  apply_hb_year(HB = 'T', ey = 203, cy = current_year) %>% 
+  apply_hb_year(HB = 'W', ey = 304, cy = current_year) %>% 
+  apply_hb_year(HB = 'Y', ey = 405, cy = current_year) %>% 
+  apply_hb_year(HB = 'V', ey = 506, cy = current_year) %>% 
+  apply_hb_year(HB = 'G', ey = 607, cy = current_year) %>% 
+  apply_hb_year(HB = 'A', ey = 708, cy = current_year) %>% 
+  apply_hb_year(HB = 'H', ey = 809, cy = current_year) %>% 
+  apply_hb_year(HB = 'Z', ey = 809, cy = current_year) %>% 
+  apply_hb_year(HB = 'N', ey = 910, cy = current_year) %>% 
+  apply_hb_year(HB = 'R', ey = 1011, cy = current_year) 
+
+# create totals for individual hb 
+hb_open_data_pop_estimates <- rbind(hb_open_data_pop_estimates %>% 
+                            group_by(HB2019, schlyr_exam) %>%
+                            summarise(population = sum(pop)) %>% ungroup())
+
+# add files together containing the total reviews, valid reviews and 
+# population estimates
+hb_coverage_open_data <- full_join(hb_open_data_pop_estimates,
+                                   hb_p1rev_open_data, 
+                                  by = c("HB2019", "schlyr_exam")) %>% 
+  full_join(hb_valid_p1rev_open_data, by = c("HB2019", "schlyr_exam")) %>% 
+# rename school year variable
+# hb_coverage_open_data <- hb_coverage_open_data %>% 
+rename(HBR2014 = HB2019,
+       SchoolYear = schlyr_exam,
+       PopulationEstAge5 = population,
+       Total_Reviews = total_reviews,
+       ValidReviews = valid_reviews)
+
+# apply function to format school year
+hb_coverage_open_data <- apply_school_year_format(hb_coverage_open_data) 
+
+# save file as csv
+write_csv(hb_coverage_open_data, paste0(host_folder, "OpenData/OD_P1BMI_Coverage_Board.csv"))
+
+
+### CA coverage
+
+
+
+
+
+
+
+
 
 
 
