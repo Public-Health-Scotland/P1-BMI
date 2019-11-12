@@ -8,7 +8,7 @@
 # Written/run on: R Studio 1.1.453
 # Version of R: 3.5.1
 # Description: Data preparation script for P1 BMI Statistics publication.
-# Approximate run time: ? min
+# Approximate run time: 30 min
 #### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
 
@@ -277,14 +277,14 @@ lookup_relevant <- semi_join(fulldatadic, bmi_data %>% colnames(.) %>% tibble::e
 bmi_data <- subset(bmi_data, agemth >=48 & agemth <96)                            #650,685 obs
 
 
+### 6 - save coverage file ----
 ## Save out a file at this point that can be used to produce the total
 ## number of reviews for HB and CA for the coverage calculations.
 ## This file contains all reviews (with and without valid height and weight)
-## save as data frame?
 saveRDS(bmi_data, paste0(host_folder, "bmi_data_coverage.rds"))
 
 
-
+### 7 - interpolation and SD scores ----
 # Convert the height and weight variables from string to numeric
 bmi_data <- mutate(bmi_data, height = as.numeric(height),
                    weight = as.numeric(weight))
@@ -439,7 +439,7 @@ bmi_data <- subset(bmi_data, (sds_b >= -7 & sds_b <= 7) &
                      (sds_h >= -7 & sds_h <= 7) & (sds_w >= -7 & sds_w <= 7))     #642,643 obs
 
 
-# Create epidemiological and clinical thresholds
+### 8 - Create epidemiological and clinical thresholds ----
 # epidemiological
 bmi_data <- bmi_data %>%
   mutate(cent_grp1 = ifelse(cent_b <= 2, 1, 0),
@@ -464,7 +464,7 @@ bmi_data <- bmi_data %>%
 saveRDS(bmi_data, paste0(host_folder, "temp_all_reviews_2.rds"))                  #642,643 obs.
 bmi_data <- readRDS(paste0(host_folder, "temp_all_reviews_2.rds"))
 
-# read in deprivation lookup. 
+### 9 - read in deprivation files ----
 simd_2016 <- readRDS(paste0(
   lookup_folder, "/Unicode/Deprivation/postcode_2019_2_simd2016.rds")) %>%
   select(pc7, simd2016_sc_quintile) %>% 
@@ -529,7 +529,7 @@ bmi_data <- bmi_data %>%
 blank_simd <- bmi_data %>%
   subset(is.na(simd))                                                             #96 obs.
 
-
+### 10 - save basefile ----
 bmi_basefile <- bmi_data %>%
   subset(select = c(chi, id, HB2019, HB2019Name, hb2019_cypher, HB2018,
                     CA2019, CA2019Name, CA2018,
@@ -549,7 +549,7 @@ saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1819.rds"))            
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 
 
-### Health board analysis
+### 11 - Health board analysis ----
 
 # create population file from the GRO mid year population estimates
 # of five year olds in each HB and for all participating boards
@@ -674,7 +674,7 @@ hb_data <- hb_data %>%
                     per_clin_obeplus))
 
 
-### Council area analysis
+### 12 - Council area analysis ----
 
 # create population file from the GRO mid year population estimates
 # of five year olds in each ca 
@@ -771,7 +771,7 @@ ca_data <- ca_data %>%
                     per_clin_obeplus))
 
 
-### Gender analysis
+### 13 - Gender analysis ----
 
 # create totals for male and female (for gender_data)
 # all participating boards
@@ -820,7 +820,7 @@ gender_data <- gender_data %>%
                     per_clin_obeplus))
 
 
-### simd analysis
+### 14 - simd analysis ----
 
 # create totals for simd (simd_data)
 simd_data <- rbind(bmi_basefile %>% group_by(simd, schlyr_exam) %>%
@@ -866,7 +866,7 @@ simd_data <- simd_data %>%
                     per_clin_obeplus))
 
 
-### data completeness
+### 15 - data completeness ----
 
 ## calculate scotland population estimates
 
@@ -890,7 +890,7 @@ mutate(location_lookup = paste0(HB2019, schlyr_exam)) %>%
 
 
 
-##  board level completeness
+### 16 - board level completeness ----
 
 bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
@@ -955,7 +955,7 @@ hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data,
   mutate(perc_coverage = valid_reviews/population)
 
 
-## council area completeness
+### 17 - council area completeness ----
 
 # create totals for the number of records with and without a valid height and 
 # weight for individual council area (for bmi_data_coverage)
@@ -1000,7 +1000,7 @@ subset(total_reviews >50) %>%
   mutate(perc_coverage = valid_reviews/population)
 
 
-### creating data for excel tables
+### 18 - creating data for excel tables ----
 
 # add all files together to create one data file for the excel tables
 # files included are hb, ca, gender, simd, scotland population file, 
@@ -1013,4 +1013,4 @@ write_csv(bmi_all_data, paste0(host_folder, "Output/bmi_all_data.csv"))
 
 
 
-### END OF SCRIPT ### ----
+#### END OF SCRIPT ### ----
