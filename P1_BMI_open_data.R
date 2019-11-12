@@ -50,7 +50,7 @@ bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
 
-## HB analysis
+### HB open data analysis ----
 # start with the file created within the main P1 bmi script to create both
 # the epidemiological and clinical open data files
 hb_open_data <- readRDS(paste0(host_folder, "OpenData/hb_open_data.rds"))
@@ -136,7 +136,7 @@ hb_open_data_clin <- apply_school_year_format(hb_open_data_clin)
 write_csv(hb_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_Clin.csv"))
 
 
-## CA analysis
+### CA open data analysis ----
 # start with the file created within the main P1 bmi script to create both
 # the epidemiological and clinical open data files
 ca_open_data <- readRDS(paste0(host_folder, "OpenData/ca_open_data.rds"))
@@ -223,7 +223,7 @@ write_csv(ca_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_Clin.csv"
 
 
 
-### Gender analysis for hb and ca
+### Gender open data analysis for hb and ca ----
 
 # use the bmi basefile as the starting point for hb gender open data files
 # hb gender epidemiological
@@ -336,7 +336,7 @@ write_csv(ca_gender_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_Ge
 
 
 
-### SIMD analysis for hb and ca
+### SIMD open data analysis for hb and ca ----
 
 # use the bmi basefile as the starting point for all simd open data files
 # hb simd epidemiological
@@ -444,26 +444,12 @@ ca_simd_open_data_clin <- apply_school_year_format(ca_simd_open_data_clin)
 write_csv(ca_simd_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_SIMD_Clin.csv"))
 
 
-### HB coverage
-bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
+### HB open data coverage ----
 
 ## create totals for the number of records with and without a valid height and 
 ## weight for individual hb and add the population estimates
 
-# create a variable for the total number of reviews
-bmi_data_coverage <- bmi_data_coverage %>% mutate(count = 1)
-# board level
-hb_p1rev_open_data <- rbind(bmi_data_coverage %>% group_by(HB2019 ,schlyr_exam) %>%
-                         summarise(total_reviews = sum(count))  %>% ungroup())
-
-# create a variable for the total number of valid reviews
-bmi_basefile <- bmi_basefile %>% mutate(count = 1) 
-# board level  
-hb_valid_p1rev_open_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
-                               summarise(valid_reviews = sum(count))  %>%
-                               ungroup())
-
-# create population estimate 
+# create population estimate for each hb
 hb_open_data_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
   rename(year = Year, age = Age, pop = Pop)
@@ -496,20 +482,35 @@ hb_open_data_pop_estimates <- hb_open_data_pop_estimates %>%
 
 # create totals for individual hb 
 hb_open_data_pop_estimates <- rbind(hb_open_data_pop_estimates %>% 
-                            group_by(HB2019, schlyr_exam) %>%
-                            summarise(population = sum(pop)) %>% ungroup())
+                                      group_by(HB2019, schlyr_exam) %>%
+                                      summarise(pop = sum(pop)) %>% ungroup())
+
+# read in the coverage file from the main p1 bmi script
+bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
+
+
+# create a variable for the total number of reviews
+bmi_data_coverage <- bmi_data_coverage %>% mutate(count = 1)
+# board level
+hb_p1rev_open_data <- rbind(bmi_data_coverage %>% group_by(HB2019 ,schlyr_exam) %>%
+                         summarise(total_reviews = sum(count))  %>% ungroup())
+
+# create a variable for the total number of valid reviews
+bmi_basefile <- bmi_basefile %>% mutate(count = 1) 
+# board level  
+hb_valid_p1rev_open_data <- rbind(bmi_basefile %>% group_by(HB2019, schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count))  %>%
+                               ungroup())
 
 # add files together containing the total reviews, valid reviews and 
-# population estimates
+# population estimates. rename variables into open data format
 hb_coverage_open_data <- full_join(hb_open_data_pop_estimates,
                                    hb_p1rev_open_data, 
                                   by = c("HB2019", "schlyr_exam")) %>% 
-  full_join(hb_valid_p1rev_open_data, by = c("HB2019", "schlyr_exam")) %>% 
-# rename school year variable
-# hb_coverage_open_data <- hb_coverage_open_data %>% 
-rename(HBR2014 = HB2019,
+  full_join(hb_valid_p1rev_open_data, by = c("HB2019", "schlyr_exam")) %>%
+  rename(HBR2014 = HB2019,
        SchoolYear = schlyr_exam,
-       PopulationEstAge5 = population,
+       PopulationEstAge5 = pop,
        Total_Reviews = total_reviews,
        ValidReviews = valid_reviews)
 
@@ -520,13 +521,51 @@ hb_coverage_open_data <- apply_school_year_format(hb_coverage_open_data)
 write_csv(hb_coverage_open_data, paste0(host_folder, "OpenData/OD_P1BMI_Coverage_Board.csv"))
 
 
-### CA coverage
+### CA open data coverage ----
+
+## create totals for the number of records with and without a valid height and 
+## weight for individual ca and add the population estimates
+
+# create population estimate for each ca
+ca_open_data_pop_estimates <- readRDS(paste0(
+  lookup_folder, "/Unicode/Populations/Estimates/CA2019_pop_est_1981_2018.rds")) %>%
+  rename(year = Year, age = Age, pop = Pop)
+
+# call the function for filtering the population estimate file
+ca_open_data_pop_estimates <- apply_pop_est_filter(ca_open_data_pop_estimates)
 
 
+# create totals for individual council areas (for ca_pop_estimates)
+# council area level
+ca_open_data_pop_estimates <- rbind(ca_open_data_pop_estimates %>%
+                                      group_by(CA2019, schlyr_exam) %>%
+                                      summarise(pop = sum(pop)) %>% ungroup())
 
+# create a variable for the total number of reviews
+ca_p1rev_open_data <- rbind(bmi_data_coverage %>% 
+                         group_by(CA2019, schlyr_exam)%>%
+                         summarise(total_reviews = sum(count)) %>% 
+                         ungroup())
 
+# create totals for the number of records with a valid height and weight
+# for individual council area (for bmi_basefile)
+ca_valid_p1rev_open_data <- rbind(bmi_basefile %>% group_by(CA2019, CA2019Name,
+                                                       schlyr_exam) %>%
+                               summarise(valid_reviews = sum(count))  %>% 
+                               ungroup())
 
-
+# add files together containing the total reviews, valid reviews and 
+# population estimates. rename variables into open data format
+ca_coverage_open_data <- full_join(ca_open_data_pop_estimates,
+                                   ca_p1rev_open_data, 
+                                   by = c("CA2019", "schlyr_exam")) %>% 
+  full_join(ca_valid_p1rev_open_data, by = c("CA2019", "schlyr_exam")) %>%
+  rename(CA2011 = CA2019,
+         SchoolYear = schlyr_exam,
+         PopulationEstAge5 = pop,
+         Total_Reviews = total_reviews,
+         ValidReviews = valid_reviews) %>% 
+  subset(total_reviews >50)
 
 
 
