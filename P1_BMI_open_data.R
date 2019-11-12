@@ -162,7 +162,7 @@ ca_open_data_epi <- ca_open_data %>%
          EpiOverweightAndObese = per_epi_overobe,
          LCIEpiOverweightAndObese = epi_overobe_lci,
          UCIEpiOverweightAndObese = epi_overobe_uci) %>%
-  subset(select = c(SchoolYear,	HBR2014,	ValidReviews,	EpiUnderweight,
+  subset(select = c(SchoolYear,	CA2011,	ValidReviews,	EpiUnderweight,
                     LCIEpiUnderweight,	UCIEpiUnderweight, EpiHealthyWeight,
                     LCIEpiHealthyWeight,	UCIEpiHealthyWeight,	EpiOverweight,
                     LCIEpiOverweight, UCIEpiOverweight,	EpiObese,	LCIEpiObese,
@@ -203,7 +203,7 @@ ca_open_data_clin <- ca_open_data %>%
          ClinObeseAndSeverelyObese = per_clin_obeplus, 
          LCIClinObeseAndSeverelyObese = clin_obeplus_lci, 
          UCIClinObeseAndSeverelyObese = clin_obeplus_uci) %>%
-  subset(select = c(SchoolYear,	HBR2014,	ValidReviews,	ClinUnderweight,
+  subset(select = c(SchoolYear,	CA2011,	ValidReviews,	ClinUnderweight,
                     LCIClinUnderweight, UCIClinUnderweight,	ClinHealthyWeight,
                     LCIClinHealthyWeight,	UCIClinHealthyWeight, ClinOverweight,
                     LCIClinOverweight,	UCIClinOverweight,	ClinObese,
@@ -268,7 +268,7 @@ hb_gender_open_data_clin <- hb_gender_open_data %>%
          ClinSeverelyObese = clin_cent_grp5,
          ClinOverweightObeseAndSeverelyObese = clin_cent_grp6,
          ClinObeseAndSeverelyObese = clin_cent_grp7) %>%
-  subset(select = c(SchoolYear, CA2011, Sex,	ValidReviews,	ClinUnderweight,	
+  subset(select = c(SchoolYear, HBR2014, Sex,	ValidReviews,	ClinUnderweight,	
                     ClinHealthyWeight, ClinOverweight, ClinObese,
                     ClinSeverelyObese, ClinOverweightObeseAndSeverelyObese,
                     ClinObeseAndSeverelyObese))
@@ -298,7 +298,7 @@ ca_gender_open_data_epi <- ca_gender_open_data %>%
          EpiOverweight = cent_grp3,
          EpiObese = cent_grp4,
          EpiOverweightAndObese = cent_grp5) %>%
-  subset(select = c(SchoolYear,	HBR2014, Sex, ValidReviews,	EpiUnderweight,
+  subset(select = c(SchoolYear,	CA2011, Sex, ValidReviews,	EpiUnderweight,
                     EpiHealthyWeight, EpiOverweight, 
                     EpiObese,	EpiOverweightAndObese))
 
@@ -511,7 +511,7 @@ hb_coverage_open_data <- full_join(hb_open_data_pop_estimates,
   rename(HBR2014 = HB2019,
        SchoolYear = schlyr_exam,
        PopulationEstAge5 = pop,
-       Total_Reviews = total_reviews,
+       TotalReviews = total_reviews,
        ValidReviews = valid_reviews)
 
 # apply function to format school year
@@ -549,8 +549,8 @@ ca_p1rev_open_data <- rbind(bmi_data_coverage %>%
 
 # create totals for the number of records with a valid height and weight
 # for individual council area (for bmi_basefile)
-ca_valid_p1rev_open_data <- rbind(bmi_basefile %>% group_by(CA2019, CA2019Name,
-                                                       schlyr_exam) %>%
+ca_valid_p1rev_open_data <- rbind(bmi_basefile %>% group_by(CA2019, 
+                                                            schlyr_exam) %>%
                                summarise(valid_reviews = sum(count))  %>% 
                                ungroup())
 
@@ -563,13 +563,15 @@ ca_coverage_open_data <- full_join(ca_open_data_pop_estimates,
   rename(CA2011 = CA2019,
          SchoolYear = schlyr_exam,
          PopulationEstAge5 = pop,
-         Total_Reviews = total_reviews,
+         TotalReviews = total_reviews,
          ValidReviews = valid_reviews) %>% 
-  subset(total_reviews >50)
+  subset(TotalReviews >50)
 
+# apply function to format school year
+ca_coverage_open_data <- apply_school_year_format(ca_coverage_open_data) 
 
-
-
+# save file as csv
+write_csv(ca_coverage_open_data, paste0(host_folder, "OpenData/OD_P1BMI_Coverage_CA.csv"))
 
 
 ### End of script
