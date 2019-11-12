@@ -866,9 +866,9 @@ simd_data <- simd_data %>%
                     per_clin_obeplus))
 
 
-### 15 - data completeness ----
+### data completeness 
 
-## calculate scotland population estimates
+### 15 - scotland population estimates ----
 
 sco_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
