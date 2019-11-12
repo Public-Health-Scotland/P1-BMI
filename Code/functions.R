@@ -151,4 +151,20 @@ apply_school_year_format <- function(df) {
 }
 
 
+# function to create SIMDVersion variable
+apply_simd_version <- function(df) {
+  df <- df %>%
+    mutate(SIMDVersion = case_when(
+      SchoolYear %in% c("2001/02", "2002/03", "2003/04") ~ "SIMD2004",
+      SchoolYear %in% c("2004/05", "2005/06", "2006/07") ~ "SIMD2006",
+      SchoolYear %in% c("2007/08", "2008/09", "2009/10") ~ "SIMD2009",
+      SchoolYear %in% c("2010/11", "2011/12", "2012/13", "2013/14") ~ "SIMD2012",
+      SchoolYear %in% c("2014/15", "2015/16", "2016/17", "2017/18",
+                        "2018/19") ~ "SIMD2016"))
+  return(df)
+}
+
+
+
+
 
