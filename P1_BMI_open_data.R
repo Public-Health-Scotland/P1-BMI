@@ -344,7 +344,8 @@ write_csv(ca_gender_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_Ge
 
 # use the bmi basefile as the starting point for all simd open data files
 # hb simd epidemiological
-hb_simd_open_data <- rbind(bmi_basefile %>% group_by(simd, HB2019, schlyr_exam) %>%
+hb_simd_open_data <- rbind(bmi_basefile %>% group_by(simd, HB2019,
+                                                     schlyr_exam) %>%
                      summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
 
 # rename variables
@@ -357,13 +358,17 @@ hb_simd_open_data_epi <- hb_simd_open_data %>%
          EpiHealthyWeight = cent_grp2,
          EpiOverweight = cent_grp3,
          EpiObese = cent_grp4,
-         EpiOverweightAndObese = cent_grp5) %>%
-  subset(select = c(SchoolYear,	HBR2014, SIMD, ValidReviews,	EpiUnderweight,
-                    EpiHealthyWeight, EpiOverweight, 
-                    EpiObese,	EpiOverweightAndObese))
+         EpiOverweightAndObese = cent_grp5) 
 
 # apply function to format school year
 hb_simd_open_data_epi <- apply_school_year_format(hb_simd_open_data_epi)
+
+# apply function to create simd version
+hb_simd_open_data_epi <- apply_simd_version(hb_simd_open_data_epi) %>% 
+  subset(select = c(SchoolYear,	HBR2014, SIMD, SIMDVersion, ValidReviews,
+                    EpiUnderweight, EpiHealthyWeight, EpiOverweight, 
+                    EpiObese,	EpiOverweightAndObese))
+
 
 # save file as csv
 write_csv(hb_simd_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_HB_SIMD_Epi.csv"))
@@ -382,14 +387,18 @@ hb_simd_open_data_clin <- hb_simd_open_data %>%
          ClinObese = clin_cent_grp4,
          ClinSeverelyObese = clin_cent_grp5,
          ClinOverweightObeseAndSeverelyObese = clin_cent_grp6,
-         ClinObeseAndSeverelyObese = clin_cent_grp7) %>%
-  subset(select = c(SchoolYear, HBR2014, SIMD,	ValidReviews,	ClinUnderweight,	
-                    ClinHealthyWeight, ClinOverweight, ClinObese,
-                    ClinSeverelyObese, ClinOverweightObeseAndSeverelyObese,
-                    ClinObeseAndSeverelyObese))
+         ClinObeseAndSeverelyObese = clin_cent_grp7) 
 
 # apply function to format school year
-hb_simd_open_data_clin <- apply_school_year_format(hb_simd_open_data_clin) 
+hb_simd_open_data_clin <- apply_school_year_format(hb_simd_open_data_clin)
+
+# apply function to create simd version
+hb_simd_open_data_clin <- apply_simd_version(hb_simd_open_data_clin) %>%
+  subset(select = c(SchoolYear, HBR2014, SIMD, SIMDVersion, ValidReviews,	
+                    ClinUnderweight, ClinHealthyWeight, ClinOverweight, 
+                    ClinObese, ClinSeverelyObese, 
+                    ClinOverweightObeseAndSeverelyObese, 
+                    ClinObeseAndSeverelyObese)) 
 
 # save file as csv
 write_csv(hb_simd_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_SIMD_Clin.csv"))
@@ -397,8 +406,10 @@ write_csv(hb_simd_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_SIMD
 
 # use the bmi basefile as the starting point for all simd open data files
 # ca simd epidemiological
-ca_simd_open_data <- rbind(bmi_basefile %>% group_by(simd, CA2019, schlyr_exam) %>%
-                             summarise_at(vars(tot:clin_cent_grp7), sum)  %>% ungroup())
+ca_simd_open_data <- rbind(bmi_basefile %>% group_by(simd, CA2019,
+                                                     schlyr_exam) %>%
+                             summarise_at(vars(tot:clin_cent_grp7), sum)
+                           %>% ungroup()) 
 
 # rename variables
 ca_simd_open_data_epi <- ca_simd_open_data %>% 
@@ -410,13 +421,17 @@ ca_simd_open_data_epi <- ca_simd_open_data %>%
          EpiHealthyWeight = cent_grp2,
          EpiOverweight = cent_grp3,
          EpiObese = cent_grp4,
-         EpiOverweightAndObese = cent_grp5) %>%
-  subset(select = c(SchoolYear,	CA2011, SIMD, ValidReviews,	EpiUnderweight,
-                    EpiHealthyWeight, EpiOverweight, 
+         EpiOverweightAndObese = cent_grp5) 
+
+# apply function to format school year and create simd version variable
+ca_simd_open_data_epi <- apply_school_year_format(ca_simd_open_data_epi) 
+
+# apply function to create simd version
+ca_simd_open_data_epi <- apply_simd_version(ca_simd_open_data_epi) %>% 
+  subset(select = c(SchoolYear,	CA2011, SIMD, SIMDVersion, ValidReviews,
+                    EpiUnderweight, EpiHealthyWeight, EpiOverweight, 
                     EpiObese,	EpiOverweightAndObese))
 
-# apply function to format school year
-ca_simd_open_data_epi <- apply_school_year_format(ca_simd_open_data_epi)
 
 # save file as csv
 write_csv(ca_simd_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_CA_SIMD_Epi.csv"))
@@ -435,14 +450,18 @@ ca_simd_open_data_clin <- ca_simd_open_data %>%
          ClinObese = clin_cent_grp4,
          ClinSeverelyObese = clin_cent_grp5,
          ClinOverweightObeseAndSeverelyObese = clin_cent_grp6,
-         ClinObeseAndSeverelyObese = clin_cent_grp7) %>%
-  subset(select = c(SchoolYear, CA2011, SIMD,	ValidReviews,	ClinUnderweight,	
-                    ClinHealthyWeight, ClinOverweight, ClinObese,
-                    ClinSeverelyObese, ClinOverweightObeseAndSeverelyObese,
-                    ClinObeseAndSeverelyObese))
+         ClinObeseAndSeverelyObese = clin_cent_grp7) 
 
-# apply function to format school year
-ca_simd_open_data_clin <- apply_school_year_format(ca_simd_open_data_clin) 
+# apply function to format school year 
+ca_simd_open_data_clin <- apply_school_year_format(ca_simd_open_data_clin)
+
+# apply function to create simd version
+ca_simd_open_data_clin <- apply_simd_version(ca_simd_open_data_clin) %>%
+  subset(select = c(SchoolYear, CA2011, SIMD, SIMDVersion, ValidReviews,	
+                    ClinUnderweight, ClinHealthyWeight, ClinOverweight, 
+                    ClinObese, ClinSeverelyObese, 
+                    ClinOverweightObeseAndSeverelyObese, 
+                    ClinObeseAndSeverelyObese)) 
 
 # save file as csv
 write_csv(ca_simd_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_CA_SIMD_Clin.csv"))
