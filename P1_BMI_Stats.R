@@ -1009,6 +1009,10 @@ bmi_all_data <- bind_rows(hb_data, ca_data, gender_data, simd_data,
                           sco_pop_estimates, hb_completeness_data,
                           ca_completeness_data)
 
+# save as R file
+saveRDS(bmi_all_data, paste0(host_folder, "Output/bmi_all_data.rds")) 
+
+# save file as csv
 write_csv(bmi_all_data, paste0(host_folder, "Output/bmi_all_data.csv"))
 
 
