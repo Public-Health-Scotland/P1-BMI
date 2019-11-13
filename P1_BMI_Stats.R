@@ -660,7 +660,7 @@ subset(select = c(HB2019, HB2019Name, hb2019_cypher, schlyr_exam,
 # save the open data file
 saveRDS(hb_open_data, paste0(host_folder, "OpenData/hb_open_data.rds"))
 
-# select the variables needed for both the excel tables and open data
+# select the variables needed for the excel tables
 hb_data <- hb_data %>%
   subset(select = c(location_lookup, location_name,
                     total_reviews, num_epi_undw, num_epi_hw, num_epi_over,
