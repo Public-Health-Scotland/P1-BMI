@@ -1,4 +1,4 @@
-### functions for primary 1 bmi publication
+### functions for primary 1 bmi publication ----
 
 ## Select relevant years function
 apply_hb_year <- function(x, HB, ey, cy) {
@@ -124,7 +124,7 @@ apply_pop_est_filter <- function(df) {
 }
 
 
-### Open data functions
+### Open data functions ----
 
 # function to change the format of school year e.g. "0102" to "2001/02"
 apply_school_year_format <- function(df) {
@@ -165,6 +165,29 @@ apply_simd_version <- function(df) {
 }
 
 
+### Tableau data functions ----
+apply_year_ending_variable <- function(df) {
+  df <- df %>% 
+    mutate(YearEnding = case_when(SchoolYear == "2001/02" ~ "30/06/2002",
+                                  SchoolYear == "2002/03" ~ "30/06/2003",
+                                  SchoolYear == "2003/04" ~ "30/06/2004",
+                                  SchoolYear == "2004/05" ~ "30/06/2005",
+                                  SchoolYear == "2005/06" ~ "30/06/2006",
+                                  SchoolYear == "2006/07" ~ "30/06/2007",
+                                  SchoolYear == "2007/08" ~ "30/06/2008",
+                                  SchoolYear == "2008/09" ~ "30/06/2009",
+                                  SchoolYear == "2009/10" ~ "30/06/2010",
+                                  SchoolYear == "2010/11" ~ "30/06/2011",
+                                  SchoolYear == "2011/12" ~ "30/06/2012",
+                                  SchoolYear == "2012/13" ~ "30/06/2013",
+                                  SchoolYear == "2013/14" ~ "30/06/2014",
+                                  SchoolYear == "2014/15" ~ "30/06/2015",
+                                  SchoolYear == "2015/16" ~ "30/06/2016",
+                                  SchoolYear == "2016/17" ~ "30/06/2017",
+                                  SchoolYear == "2017/18" ~ "30/06/2018",
+                                  SchoolYear == "2018/19" ~ "30/06/2019"))
+  return(df)
+}
 
 
-
+#### END OF SCRIPT ### ----
