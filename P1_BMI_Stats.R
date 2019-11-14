@@ -555,7 +555,8 @@ bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 # of five year olds in each HB and for all participating boards
 hb_pop_estimates <- readRDS(paste0(
   lookup_folder, "/Unicode/Populations/Estimates/HB2019_pop_est_1981_2018.rds")) %>%
-  rename(year = Year, age = Age, pop = Pop)
+  rename(year = Year, age = Age, pop = Pop) %>% 
+  mutate(HB2019Name = paste0("NHS ", HB2019Name))
 
 # call the function for filtering the population estimate file
 hb_pop_estimates <- apply_pop_est_filter(hb_pop_estimates)
@@ -587,13 +588,14 @@ hb_pop_estimates <- hb_pop_estimates %>%
 # participating boards (for hb_pop_estimates)
 # Board level
 hb_pop_estimates <- rbind(hb_pop_estimates %>% 
-                            group_by(HB2019, hb2019_cypher,
+                            group_by(HB2019, HB2019Name, hb2019_cypher,
                                      schlyr_exam)%>%
                             summarise(pop = sum(pop)) %>% ungroup(),
                           # Scotland level (all participating boards)
                           hb_pop_estimates %>% group_by(schlyr_exam) %>%
                             summarise(pop = sum(pop)) %>%
                             mutate(HB2019 = "Total",
+                                   HB2019Name = "Total",
                                    hb2019_cypher = "Total") %>% ungroup())
 
 # create totals for individual hb and all participating boards (for hb_data)
@@ -940,14 +942,14 @@ hb_pop_estimates <- hb_pop_estimates %>%
                             TRUE ~ hb2019_cypher)) %>% 
   # create location_lookup variable for excel tables
   mutate(location_lookup = paste0(hb2019_cypher, schlyr_exam)) %>% 
-  subset(select = c(location_lookup, pop))
+  subset(select = c(location_lookup, HB2019Name, pop))
 
 # Add all health board files (population, all P1 reviews and
 # P1 reviews with valid h&w measurements)
 hb_completeness_data <- full_join(hb_pop_estimates, hb_p1rev_data, 
-                                  by = c("location_lookup")) %>% 
-        full_join(hb_valid_p1rev_data, by = c("location_lookup")) %>% 
-  rename(location_name = HB2019Name.x) %>% 
+                                  by = c("location_lookup", "HB2019Name")) %>% 
+        full_join(hb_valid_p1rev_data, by = c("location_lookup", "HB2019Name")) %>% 
+  rename(location_name = HB2019Name) %>% 
   rename(population = pop) %>% 
   subset(select = c(location_lookup, location_name, valid_reviews,
                     total_reviews, population)) %>% 
