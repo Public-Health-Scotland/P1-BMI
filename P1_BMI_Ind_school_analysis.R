@@ -49,7 +49,7 @@ bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 ind_school_lookup <- read_spss(paste(file.path(
   reference_files, "Independent_primary_schools.sav")))
 
-# rename the school code variables
+# rename the school code variable
 bmi_basefile <- bmi_basefile %>% 
   rename(school_code = schlgivn)
 
@@ -63,5 +63,7 @@ independent_schools <- rbind(independent_schools %>%
                                     summarise(total_reviews = sum(tot)) %>% 
                                     ungroup()) %>% 
   subset(schlyr_exam == current_year)
+
+View(independent_schools)
 
 #### END OF SCRIPT ### ----
