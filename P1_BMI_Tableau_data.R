@@ -46,21 +46,36 @@ if (server_desktop == "server") {
 current_year <- 1819
 
 
-### Create the data file for Tableau ----
+### Create the hb file for Tableau aggregating by year, hb, simd, sex ----
 
 # read in the basefile from main P1 BMI script
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 
+# hb file
+# create totals for individual hb and all participating boards
+tab_hb_data <- bind_rows(bmi_basefile %>% group_by(schlyr_exam, HB2019Name,
+                                                   simd, sex) %>%
+                       summarise_at(vars(tot:clin_cent_grp7), sum)
+                     %>% ungroup(),
+                     # Scotland level (all participating boards)
+                     bmi_basefile %>% group_by(schlyr_exam, simd, sex) %>% 
+                       summarise_at(vars(tot:clin_cent_grp7), sum) %>%
+                       mutate(HB2019Name = "Total") %>% ungroup())
 
-# # start with the final output from the main P1 BMI script
-# bmi_all_data <- readRDS(paste0(host_folder, "Output/bmi_all_data.rds")) 
-# 
-# bmi_all_data <- bmi_all_data %>% 
-#   subset(select = c(location_lookup, location_name, total_reviews, population,
-#                     valid_reviews)) %>% 
-#   mutate(coverage_flag = substr(location_lookup,1,8)) %>% 
-#   subset(coverage_flag == "Coverage")
-  
+
+# ca file 
+# create totals for individual hb and all participating boards (for ca_data)
+# council area level
+tab_ca_data <- rbind(bmi_basefile %>% group_by(CA2019Name, schlyr_exam) %>%
+                   summarise_at(vars(tot:clin_cent_grp7), sum)
+                   %>% ungroup())
+
+# Select council areas with a valid population. Some council areas 
+# may have small numbers for years that they did not participate.
+tab_ca_data <- subset(tab_ca_data, tot >50)
+
+
+
 
 
 
