@@ -60,19 +60,31 @@ tab_hb_data <- bind_rows(bmi_basefile %>% group_by(schlyr_exam, HB2019Name,
                      # Scotland level (all participating boards)
                      bmi_basefile %>% group_by(schlyr_exam, simd, sex) %>% 
                        summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                       mutate(HB2019Name = "Total") %>% ungroup())
+                       mutate(HB2019Name = "Total") %>% ungroup()) %>% 
+  # replace simd 'na' values with 'U' for unknown
+  replace_na(list(simd = "U"))
 
 
 # ca file 
 # create totals for individual hb and all participating boards (for ca_data)
 # council area level
-tab_ca_data <- rbind(bmi_basefile %>% group_by(CA2019Name, schlyr_exam) %>%
+tab_ca_data <- rbind(bmi_basefile %>% group_by(schlyr_exam, CA2019, CA2019Name,
+                                               simd, sex) %>%
                    summarise_at(vars(tot:clin_cent_grp7), sum)
-                   %>% ungroup())
+                   %>% ungroup()) %>% 
+  # replace simd 'na' values with 'U' for unknown
+  replace_na(list(simd = "U")) %>% 
+  rename(SchoolYear = schlyr_exam)
 
-# Select council areas with a valid population. Some council areas 
-# may have small numbers for years that they did not participate.
-tab_ca_data <- subset(tab_ca_data, tot >50)
+# apply school year function from list of open data functions
+tab_ca_data <- apply_school_year_format(tab_ca_data)
+
+# apply ca exclusion for years when ca's have less than 50 records
+tab_ca_data <- apply_ca_exclusion(tab_ca_data)
+
+# filter out the flagged records
+tab_ca_data <- tab_ca_data %>% 
+  filter(flag != 1)
 
 
 
