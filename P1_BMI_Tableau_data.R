@@ -1,5 +1,8 @@
-### P1 BMI - create Tableau data file.
-# create two separate files for Tableau - data file and coverage file.
+### P1 BMI - create Tableau data files.
+# create 3 separate files for Tableau:
+# 1 - combined hb and ca bmi data file.
+# 2 - donut chart data.
+# 3 - combined hb and ca coverage file.
 
 ### 1 - Housekeeping ----
 
@@ -46,10 +49,10 @@ if (server_desktop == "server") {
 current_year <- 1819
 
 
-### Create the hb file for Tableau aggregating by year, hb, simd, sex ----
-
 # read in the basefile from main P1 BMI script
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
+
+### Create the hb file for Tableau aggregating by year, hb, simd, sex ----
 
 # hb file
 # create totals for individual hb and all participating boards
@@ -80,10 +83,10 @@ tab_hb_data <- bind_rows(bmi_basefile %>% group_by(schlyr_exam, HB2019Name,
          Clin_OverweightObeseSevObese = clin_cent_grp6,
          Clin_Obese_SevObese = clin_cent_grp7)
 
-# apply function to format school year
+# call the function to format school year
 tab_hb_data <- apply_school_year_format(tab_hb_data)
 
-# apply function to create year ending variable
+# call the function to create YearEnding variable
 tab_hb_data <- apply_year_ending_variable(tab_hb_data)
 
 # re-order the variables
@@ -96,80 +99,184 @@ tab_hb_data <- tab_hb_data %>%
                     Clin_OverweightObeseSevObese, Clin_Obese_SevObese))
 
 
-
-# list the variables needed for final data file
-# SchoolYear
-# YearEnding
-# HB_RESIDENCE_DESC
-# simd
-# sex
-# N_Valid_Height_Weight
-# Epi_Underweight
-# Epi_HealthyWeight
-# Epi_Overweight
-# Epi_Obese
-# Epi_OverweightObese
-# Clin_Underweight
-# Clin_HealthyWeight
-# Clin_Overweight
-# Clin_Obese
-# Clin_SeverelyObese
-# Clin_OverweightObeseSevObese
-# Clin_Obese_SevObese
-# COUNCIL_AREA_DESC
-# flag
-
-
-
+### Create the ca file for Tableau aggregating by year, hb, simd, sex ----
 
 # ca file 
-# create totals for individual hb and all participating boards (for ca_data)
-# council area level
+# create totals for individual ca's
 tab_ca_data <- rbind(bmi_basefile %>% group_by(schlyr_exam, CA2019, CA2019Name,
                                                simd, sex) %>%
                    summarise_at(vars(tot:clin_cent_grp7), sum)
                    %>% ungroup()) %>% 
   # replace simd 'na' values with 'U' for unknown
   replace_na(list(simd = "U")) %>% 
-  rename(SchoolYear = schlyr_exam)
+  rename(SchoolYear = schlyr_exam,
+         COUNCIL_AREA_DESC = CA2019Name,
+         N_Valid_Height_Weight = tot,
+         Epi_Underweight = cent_grp1,
+         Epi_HealthyWeight = cent_grp2,
+         Epi_Overweight = cent_grp3,
+         Epi_Obese = cent_grp4,
+         Epi_OverweightObese = cent_grp5,
+         Clin_Underweight = clin_cent_grp1,
+         Clin_HealthyWeight = clin_cent_grp2,
+         Clin_Overweight = clin_cent_grp3,
+         Clin_Obese = clin_cent_grp4,
+         Clin_SeverelyObese = clin_cent_grp5,
+         Clin_OverweightObeseSevObese = clin_cent_grp6,
+         Clin_Obese_SevObese = clin_cent_grp7)
+         
 
-# apply school year function from list of open data functions
+# call the function to format school year (from list of open data functions)
 tab_ca_data <- apply_school_year_format(tab_ca_data)
 
-# apply ca exclusion for years when ca's have less than 50 records
+# call the function to create YearEnding variable
+tab_ca_data <- apply_year_ending_variable(tab_ca_data)
+
+# call the function to flag ca for years when ca's have less than 50 records
 tab_ca_data <- apply_ca_exclusion(tab_ca_data)
 
-# filter out the flagged records
+# filter out the flagged records and re-order variables
 tab_ca_data <- tab_ca_data %>% 
-  filter(flag != 1)
+  filter(flag != 1) %>% 
+  subset(select = c(SchoolYear, YearEnding, simd,
+                    sex, N_Valid_Height_Weight, Epi_Underweight, 
+                    Epi_HealthyWeight, Epi_Overweight, Epi_Obese, 
+                    Epi_OverweightObese, Clin_Underweight, Clin_HealthyWeight,
+                    Clin_Overweight, Clin_Obese, Clin_SeverelyObese, 
+                    Clin_OverweightObeseSevObese, Clin_Obese_SevObese,
+                    COUNCIL_AREA_DESC, flag))
+
+# add both the hb and ca files together
+tableau_data <- bind_rows(tab_hb_data, tab_ca_data) %>% 
+  mutate_all(., replace_na, 0) %>% 
+  mutate(COUNCIL_AREA_DESC = case_when(
+    HB_RESIDENCE_DESC == "All Participating Boards" ~ "All Participating Boards",
+    TRUE ~ COUNCIL_AREA_DESC))
+
+# save the final data file for Tableau as SPSS .sav file (1 of 3) ----
+haven::write_sav(tableau_data,
+                 file.path(tableau_folder,
+                           "P1BMI_agg.sav"), compress = FALSE)
+
+
+### donut chart data, separate hb and ca files required
+
+# hb file ----
+# create epidemiological grouping variable
+tab_donut_hb_data <- bmi_basefile %>% 
+  mutate(Epidemiological_Grouping = case_when(
+    cent_grp1 == 1 ~ "at risk of underweight",
+    cent_grp2 == 1 ~ "healthy weight",
+    cent_grp3 == 1 ~ "at risk of overweight",
+    cent_grp4 == 1 ~ "at risk of obesity")) %>% 
+# create clinical grouping variable
+  mutate(Clinical_Grouping = case_when(
+    clin_cent_grp1 == 1 ~ "clinically underweight",
+    clin_cent_grp2 == 1 ~ "clinically healthy weight",
+    clin_cent_grp3 == 1 ~ "clinically overweight",
+    clin_cent_grp4 == 1 ~ "clinically obese",
+    clin_cent_grp5 == 1 ~ "clinically severely obese")) %>% 
+  rename(SchoolYear = schlyr_exam,
+         N_Records = tot,
+         HB_RESIDENCE_DESC = HB2019Name)
+
+# call the function to format school year
+tab_donut_hb_data <- apply_school_year_format(tab_donut_hb_data)
+
+# call the function to create YearEnding variable
+tab_donut_hb_data <- apply_year_ending_variable(tab_donut_hb_data)
+
+
+# aggregate data for individual hb and for all participating boards
+tab_donut_hb_data <- rbind(tab_donut_hb_data %>%
+                             group_by(SchoolYear, YearEnding, 
+                                      Epidemiological_Grouping, 
+                                      Clinical_Grouping, simd, sex, 
+                                      HB_RESIDENCE_DESC) %>%
+                             summarise(N_Records = sum(N_Records)) %>%
+                             ungroup(),
+                           # Scotland level (all participating boards)
+                           tab_donut_hb_data %>% 
+                             group_by(SchoolYear, YearEnding, 
+                                      Epidemiological_Grouping, 
+                                      Clinical_Grouping, simd, sex) %>%
+                             summarise(N_Records = sum(N_Records)) %>%
+                             mutate(HB_RESIDENCE_DESC = 
+                                      "All Participating Boards") %>%
+                             ungroup()) %>% 
+  replace_na(list(simd = "U"))
+
+
+# ca file ----
+# create epidemiological grouping variable
+tab_donut_ca_data <- bmi_basefile %>% 
+  mutate(Epidemiological_Grouping = case_when(
+    cent_grp1 == 1 ~ "at risk of underweight",
+    cent_grp2 == 1 ~ "healthy weight",
+    cent_grp3 == 1 ~ "at risk of overweight",
+    cent_grp4 == 1 ~ "at risk of obesity")) %>% 
+  # create clinical grouping variable
+  mutate(Clinical_Grouping = case_when(
+    clin_cent_grp1 == 1 ~ "clinically underweight",
+    clin_cent_grp2 == 1 ~ "clinically healthy weight",
+    clin_cent_grp3 == 1 ~ "clinically overweight",
+    clin_cent_grp4 == 1 ~ "clinically obese",
+    clin_cent_grp5 == 1 ~ "clinically severely obese")) %>% 
+  rename(SchoolYear = schlyr_exam,
+         COUNCIL_AREA_DESC = CA2019Name,
+         N_Records = tot)
+
+# call the function to format school year
+tab_donut_ca_data <- apply_school_year_format(tab_donut_ca_data)
+
+# call the function to create YearEnding variable
+tab_donut_ca_data <- apply_year_ending_variable(tab_donut_ca_data)
+
+
+# aggregate data
+tab_donut_ca_data <- rbind(tab_donut_ca_data %>%
+                             group_by(SchoolYear, YearEnding, COUNCIL_AREA_DESC,
+                                      Epidemiological_Grouping,
+                                      Clinical_Grouping, simd, sex) %>%
+                             summarise(N_Records = sum(N_Records)) %>%
+                             ungroup()) %>% 
+  replace_na(list(simd = "U"))
+
+
+# add both the hb and ca files together
+tab_donut_data <- bind_rows(tab_donut_hb_data, tab_donut_ca_data) %>% 
+  mutate_all(., replace_na, 0) %>% 
+  mutate(COUNCIL_AREA_DESC = case_when(
+    HB_RESIDENCE_DESC == "All Participating Boards" ~ "All Participating Boards",
+    TRUE ~ COUNCIL_AREA_DESC))
+
+
+
+  
+
+  # re-order variables
+  subset(SchoolYear, YearEnding, COUNCIL_AREA_DESC, 
+         Epidemiological_Grouping, Clinical_Grouping, 
+         simd, sex, N_Records, HB_RESIDENCE_DESC)
 
 
 
 
 
 
-
-# list the variables needed for final data file
+### final variables for donut data file
 # SchoolYear
 # YearEnding
-# HB_RESIDENCE_DESC
+# COUNCIL_AREA_DESC
+# Epidemiological_Grouping
+# Clinical_Grouping
 # simd
 # sex
-# N_Valid_Height_Weight
-# Epi_Underweight
-# Epi_HealthyWeight
-# Epi_Overweight
-# Epi_Obese
-# Epi_OverweightObese
-# Clin_Underweight
-# Clin_HealthyWeight
-# Clin_Overweight
-# Clin_Obese
-# Clin_SeverelyObese
-# Clin_OverweightObeseSevObese
-# Clin_Obese_SevObese
-# COUNCIL_AREA_DESC
-# flag
+# N_Records
+# HB_RESIDENCE_DESC
+
+
+
 
 
 
@@ -200,7 +307,7 @@ bmi_basefile <- bmi_basefile %>% mutate(count = 1)
 # board level  
 tab_hb_valid_p1rev_data <- rbind(bmi_basefile %>% group_by(HB2019Name, 
                                                        schlyr_exam) %>%
-                               summarise(valid_reviews = sum(count))  %>%
+                               summarise(valid_reviews = sum(count)) %>%
                                ungroup(),
                              # Scotland level (all participating boards)
                              bmi_basefile %>% group_by(schlyr_exam) %>%
@@ -314,11 +421,10 @@ tab_coverage_data <- tab_coverage_data %>%
          SchoolYear = schlyr_exam,
          COUNCIL_AREA_DESC = CA2019Name)
 
-# apply school year formatting function
+# call the function to format school year
 tab_coverage_data <- apply_school_year_format(tab_coverage_data)
 
-
-# apply the function to create YearEnding variable
+# call the function to create YearEnding variable
 tab_coverage_data <- apply_year_ending_variable(tab_coverage_data) %>%
 # select out only the required variables  
   subset(select = c(pop_estimate, tot_revs, valid_revs, 
@@ -332,14 +438,10 @@ tab_coverage_data <- apply_year_ending_variable(tab_coverage_data) %>%
     HB_RESIDENCE_DESC == "All Participating Boards" ~ "All Participating Boards",
     TRUE ~ COUNCIL_AREA_DESC))
 
-# save out the final coverage file for Tableau
+# save the final coverage file for Tableau as SPSS .sav file (3 of 3) ----
 haven::write_sav(tab_coverage_data,
                  file.path(tableau_folder,
                            "P1_coverage_data.sav"), compress = FALSE)
 
 
-
-
-
-
-#### END OF SCRIPT ### ----
+### END OF SCRIPT ### ----
