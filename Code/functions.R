@@ -166,6 +166,8 @@ apply_simd_version <- function(df) {
 
 
 ### Tableau data functions ----
+
+# function to create a YearEnding variable for Tableau
 apply_year_ending_variable <- function(df) {
   df <- df %>% 
     mutate(YearEnding = case_when(SchoolYear == "2001/02" ~ "30/06/2002",
@@ -189,7 +191,7 @@ apply_year_ending_variable <- function(df) {
   return(df)
 }
 
-# add a new function to create flag for excluding ca's with less than 50 records
+# add a new function to create a flag for excluding ca's with less than 50 records
 apply_ca_exclusion <- function(df) {
   df <- df %>% 
     mutate(flag = case_when(
