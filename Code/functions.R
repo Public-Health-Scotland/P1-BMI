@@ -189,6 +189,7 @@ apply_year_ending_variable <- function(df) {
   return(df)
 }
 
+# add a new function to create flag for excluding ca's with less than 50 records
 apply_ca_exclusion <- function(df) {
   df <- df %>% 
     mutate(flag = case_when(
