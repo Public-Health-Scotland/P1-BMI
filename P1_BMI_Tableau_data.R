@@ -60,9 +60,66 @@ tab_hb_data <- bind_rows(bmi_basefile %>% group_by(schlyr_exam, HB2019Name,
                      # Scotland level (all participating boards)
                      bmi_basefile %>% group_by(schlyr_exam, simd, sex) %>% 
                        summarise_at(vars(tot:clin_cent_grp7), sum) %>%
-                       mutate(HB2019Name = "Total") %>% ungroup()) %>% 
+                       mutate(HB2019Name = "All Participating Boards") %>% 
+                       ungroup()) %>% 
   # replace simd 'na' values with 'U' for unknown
-  replace_na(list(simd = "U"))
+  replace_na(list(simd = "U")) %>% 
+  rename(SchoolYear = schlyr_exam,
+         HB_RESIDENCE_DESC = HB2019Name,
+         N_Valid_Height_Weight = tot,
+         Epi_Underweight = cent_grp1,
+         Epi_HealthyWeight = cent_grp2,
+         Epi_Overweight = cent_grp3,
+         Epi_Obese = cent_grp4,
+         Epi_OverweightObese = cent_grp5,
+         Clin_Underweight = clin_cent_grp1,
+         Clin_HealthyWeight = clin_cent_grp2,
+         Clin_Overweight = clin_cent_grp3,
+         Clin_Obese = clin_cent_grp4,
+         Clin_SeverelyObese = clin_cent_grp5,
+         Clin_OverweightObeseSevObese = clin_cent_grp6,
+         Clin_Obese_SevObese = clin_cent_grp7)
+
+# apply function to format school year
+tab_hb_data <- apply_school_year_format(tab_hb_data)
+
+# apply function to create year ending variable
+tab_hb_data <- apply_year_ending_variable(tab_hb_data)
+
+# re-order the variables
+tab_hb_data <- tab_hb_data %>% 
+  subset(select = c(SchoolYear, YearEnding, HB_RESIDENCE_DESC, simd,
+                    sex, N_Valid_Height_Weight, Epi_Underweight, 
+                    Epi_HealthyWeight, Epi_Overweight, Epi_Obese, 
+                    Epi_OverweightObese, Clin_Underweight, Clin_HealthyWeight,
+                    Clin_Overweight, Clin_Obese, Clin_SeverelyObese, 
+                    Clin_OverweightObeseSevObese, Clin_Obese_SevObese))
+
+
+
+# list the variables needed for final data file
+# SchoolYear
+# YearEnding
+# HB_RESIDENCE_DESC
+# simd
+# sex
+# N_Valid_Height_Weight
+# Epi_Underweight
+# Epi_HealthyWeight
+# Epi_Overweight
+# Epi_Obese
+# Epi_OverweightObese
+# Clin_Underweight
+# Clin_HealthyWeight
+# Clin_Overweight
+# Clin_Obese
+# Clin_SeverelyObese
+# Clin_OverweightObeseSevObese
+# Clin_Obese_SevObese
+# COUNCIL_AREA_DESC
+# flag
+
+
 
 
 # ca file 
