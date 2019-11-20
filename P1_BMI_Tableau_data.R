@@ -101,7 +101,7 @@ tab_hb_data <- tab_hb_data %>%
 
 ### Create the ca file for Tableau aggregating by year, hb, simd, sex ----
 
-# ca file 
+# ca file
 # create totals for individual ca's
 tab_ca_data <- rbind(bmi_basefile %>% group_by(schlyr_exam, CA2019, CA2019Name,
                                                simd, sex) %>%
@@ -159,7 +159,7 @@ haven::write_sav(tableau_data,
                            "P1BMI_agg.sav"), compress = FALSE)
 
 
-### donut chart data, separate hb and ca files required
+### donut chart data, separate hb and ca files required ----
 
 # hb file ----
 # create epidemiological grouping variable
@@ -232,6 +232,11 @@ tab_donut_ca_data <- apply_school_year_format(tab_donut_ca_data)
 # call the function to create YearEnding variable
 tab_donut_ca_data <- apply_year_ending_variable(tab_donut_ca_data)
 
+# call the function to flag ca for years when ca's have less than 50 records
+tab_donut_ca_data <- apply_ca_exclusion(tab_donut_ca_data) %>% 
+  # filter out the flagged records
+  filter(flag != 1)
+
 
 # aggregate data
 tab_donut_ca_data <- rbind(tab_donut_ca_data %>%
@@ -248,39 +253,19 @@ tab_donut_data <- bind_rows(tab_donut_hb_data, tab_donut_ca_data) %>%
   mutate_all(., replace_na, 0) %>% 
   mutate(COUNCIL_AREA_DESC = case_when(
     HB_RESIDENCE_DESC == "All Participating Boards" ~ "All Participating Boards",
-    TRUE ~ COUNCIL_AREA_DESC))
-
-
-
-  
-
+    TRUE ~ COUNCIL_AREA_DESC)) %>% 
   # re-order variables
-  subset(SchoolYear, YearEnding, COUNCIL_AREA_DESC, 
+  subset(select = c(SchoolYear, YearEnding, COUNCIL_AREA_DESC, 
          Epidemiological_Grouping, Clinical_Grouping, 
-         simd, sex, N_Records, HB_RESIDENCE_DESC)
+         simd, sex, N_Records, HB_RESIDENCE_DESC))
+
+# save the final donut chart data file for Tableau as SPSS .sav file (2 of 3) ----
+haven::write_sav(tab_donut_data,
+                 file.path(tableau_folder,
+                           "P1BMI_donut_data.sav"), compress = FALSE)
 
 
-
-
-
-
-### final variables for donut data file
-# SchoolYear
-# YearEnding
-# COUNCIL_AREA_DESC
-# Epidemiological_Grouping
-# Clinical_Grouping
-# simd
-# sex
-# N_Records
-# HB_RESIDENCE_DESC
-
-
-
-
-
-
-### Coverage for Tableau file
+### Coverage for Tableau file ----
 
 ### Create the hb coverage file for Tableau ----
 
