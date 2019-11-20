@@ -58,11 +58,12 @@ independent_schools <- full_join(bmi_basefile, ind_school_lookup,
                                   by = c("school_code"))
 
 independent_schools <- rbind(independent_schools %>% 
-                                    group_by(school_name,
+                                    group_by(school_name, school_code,
                                              schlyr_exam) %>% 
                                     summarise(total_reviews = sum(tot)) %>% 
                                     ungroup()) %>% 
-  subset(schlyr_exam == current_year)
+  subset(schlyr_exam == current_year) %>% 
+  filter(school_name != 0)
 
 View(independent_schools)
 
