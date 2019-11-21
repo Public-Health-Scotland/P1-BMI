@@ -148,7 +148,6 @@ tab_ca_data <- tab_ca_data %>%
 
 # add both the hb and ca files together
 tableau_data <- bind_rows(tab_hb_data, tab_ca_data) %>% 
-  mutate_all(., replace_na, 0) %>% 
   mutate(COUNCIL_AREA_DESC = case_when(
     HB_RESIDENCE_DESC == "All Participating Boards" ~ "All Participating Boards",
     TRUE ~ COUNCIL_AREA_DESC))
@@ -250,7 +249,6 @@ tab_donut_ca_data <- rbind(tab_donut_ca_data %>%
 
 # add both the hb and ca files together
 tab_donut_data <- bind_rows(tab_donut_hb_data, tab_donut_ca_data) %>% 
-  mutate_all(., replace_na, 0) %>% 
   mutate(COUNCIL_AREA_DESC = case_when(
     HB_RESIDENCE_DESC == "All Participating Boards" ~ "All Participating Boards",
     TRUE ~ COUNCIL_AREA_DESC)) %>% 
@@ -259,11 +257,11 @@ tab_donut_data <- bind_rows(tab_donut_hb_data, tab_donut_ca_data) %>%
          Epidemiological_Grouping, Clinical_Grouping, 
          simd, sex, N_Records, HB_RESIDENCE_DESC))
 
+
 # save the final donut chart data file for Tableau as SPSS .sav file (2 of 3) ----
 haven::write_sav(tab_donut_data,
                  file.path(tableau_folder,
                            "P1BMI_donut_data.sav"), compress = FALSE)
-
 
 ### Coverage for Tableau file ----
 
