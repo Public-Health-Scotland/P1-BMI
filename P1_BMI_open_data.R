@@ -50,14 +50,21 @@ bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
 bmi_data_coverage <- readRDS(paste0(host_folder, "bmi_data_coverage.rds"))
 
 
-### HB open data analysis ----
+### Scotland and HB level open data analysis ----
 # start with the file created within the main P1 bmi script to create both
 # the epidemiological and clinical open data files
 hb_open_data <- readRDS(paste0(host_folder, "OpenData/hb_open_data.rds"))
 
-## hb epidemiological
-# rename variables
+## hb epidemiological ----
+# create qualifier variable for open data
 hb_open_data_epi <- hb_open_data %>% 
+  mutate_all(., replace_na, 0) %>% 
+  mutate(HBR2014QF = case_when(HB2019 == "Total" ~ "d")) %>% 
+  mutate(HB2019 = case_when(HB2019 == "Total" ~ "S92000003",
+                            TRUE ~ HB2019))
+
+# rename variables
+hb_open_data_epi <- hb_open_data_epi %>% 
   rename(SchoolYear = schlyr_exam,
          HBR2014 = HB2019, 
          ValidReviews = total_reviews,
@@ -76,7 +83,7 @@ hb_open_data_epi <- hb_open_data %>%
          EpiOverweightAndObese = per_epi_overobe,
          LCIEpiOverweightAndObese = epi_overobe_lci,
          UCIEpiOverweightAndObese = epi_overobe_uci) %>%
-  subset(select = c(SchoolYear,	HBR2014,	ValidReviews,	EpiUnderweight,
+  subset(select = c(SchoolYear,	HBR2014, HBR2014QF,	ValidReviews,	EpiUnderweight,
                     LCIEpiUnderweight,	UCIEpiUnderweight, EpiHealthyWeight,
                     LCIEpiHealthyWeight,	UCIEpiHealthyWeight,	EpiOverweight,
                     LCIEpiOverweight, UCIEpiOverweight,	EpiObese,	LCIEpiObese,
@@ -84,16 +91,22 @@ hb_open_data_epi <- hb_open_data %>%
                     LCIEpiOverweightAndObese, UCIEpiOverweightAndObese))
 
 # apply function to format school year
-hb_open_data_epi <- apply_school_year_format(hb_open_data_epi) %>% 
-  mutate_all(., replace_na, 0) 
+hb_open_data_epi <- apply_school_year_format(hb_open_data_epi)  
 
 # save file as csv
 write_csv(hb_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_HB_Epi.csv"))
 
 
-## hb clinical
-# rename variables
+## hb clinical ----
+# create qualifier variable for open data
 hb_open_data_clin <- hb_open_data %>% 
+  mutate_all(., replace_na, 0) %>% 
+  mutate(HBR2014QF = case_when(HB2019 == "Total" ~ "d")) %>% 
+  mutate(HB2019 = case_when(HB2019 == "Total" ~ "S92000003",
+                            TRUE ~ HB2019))
+
+# rename variables
+hb_open_data_clin <- hb_open_data_clin %>% 
   rename(SchoolYear = schlyr_exam,
          HBR2014 = HB2019,
          ValidReviews = total_reviews,
@@ -118,10 +131,10 @@ hb_open_data_clin <- hb_open_data %>%
          ClinObeseAndSeverelyObese = per_clin_obeplus, 
          LCIClinObeseAndSeverelyObese = clin_obeplus_lci, 
          UCIClinObeseAndSeverelyObese = clin_obeplus_uci) %>%
-  subset(select = c(SchoolYear,	HBR2014,	ValidReviews,	ClinUnderweight,
+  subset(select = c(SchoolYear,	HBR2014, HBR2014QF, ValidReviews,	ClinUnderweight,
                     LCIClinUnderweight, UCIClinUnderweight,	ClinHealthyWeight,
                     LCIClinHealthyWeight,	UCIClinHealthyWeight, ClinOverweight,
-                    LCIClinOverweight,	UCIClinOverweight,	ClinObese,
+                    LCIClinOverweight, UCIClinOverweight,	ClinObese,
                     LCIClinObese,	UCIClinObese,	ClinSeverelyObese,
                     LCIClinSeverelyObese,	UCIClinSeverelyObese,	
                     ClinOverweightObeseAndSeverelyObese,
@@ -131,8 +144,7 @@ hb_open_data_clin <- hb_open_data %>%
                     UCIClinObeseAndSeverelyObese))  
 
 # apply function to format school year and get rid of all NaN values
-hb_open_data_clin <- apply_school_year_format(hb_open_data_clin) %>% 
-  mutate_all(., replace_na, 0) 
+hb_open_data_clin <- apply_school_year_format(hb_open_data_clin)  
 
 # save file as csv
 write_csv(hb_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_Clin.csv"))
