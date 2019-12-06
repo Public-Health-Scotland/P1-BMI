@@ -91,7 +91,10 @@ hb_open_data_epi <- hb_open_data_epi %>%
                     LCIEpiOverweightAndObese, UCIEpiOverweightAndObese))
 
 # apply function to format school year
-hb_open_data_epi <- apply_school_year_format(hb_open_data_epi)  
+hb_open_data_epi <- apply_school_year_format(hb_open_data_epi) %>% 
+
+# replace 'na' with blank for qualifier variable
+replace_na(list(HBR2014QF = ''))
 
 # save file as csv
 write_csv(hb_open_data_epi, paste0(host_folder, "OpenData/OD_P1BMI_HB_Epi.csv"))
@@ -144,7 +147,10 @@ hb_open_data_clin <- hb_open_data_clin %>%
                     UCIClinObeseAndSeverelyObese))  
 
 # apply function to format school year and get rid of all NaN values
-hb_open_data_clin <- apply_school_year_format(hb_open_data_clin)  
+hb_open_data_clin <- apply_school_year_format(hb_open_data_clin) %>% 
+  
+# replace 'na' with blank for qualifier variable
+replace_na(list(HBR2014QF = ''))
 
 # save file as csv
 write_csv(hb_open_data_clin, paste0(host_folder, "OpenData/OD_P1BMI_HB_Clin.csv"))
