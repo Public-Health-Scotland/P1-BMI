@@ -546,7 +546,13 @@ bmi_basefile <- bmi_data %>%
 # those published in current_year.
 saveRDS(bmi_basefile, paste0(host_folder, "BMI_data_0102_1819.rds"))              #642,643 obs.
 
+# save the basefile as SPSS .sav file
+haven::write_sav(bmi_basefile,
+                 file.path(host_folder,
+                           "BMI_data_0102_1819.sav"), compress = FALSE)
+
 bmi_basefile <- readRDS(paste0(host_folder, "BMI_data_0102_1819.rds"))
+
 
 
 ### 11 - Health board analysis ----
