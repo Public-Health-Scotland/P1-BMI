@@ -536,7 +536,7 @@ bmi_basefile <- bmi_data %>%
                     sex, height, weight, daterec, 
                     schlyr_exam, schlgivn, rev_num, agemth, nyob, mob, dob, pc7,
                     simd_2016, simd_2012, simd_2009, simd_2006, 
-                    simd_2004, simd, sex, height_m, weight_kg, bmi, 
+                    simd_2004, simd, height_m, weight_kg, bmi, cent_b, sds_b, 
                     tot, cent_grp1, cent_grp2, cent_grp3, cent_grp4, cent_grp5, 
                     clin_cent_grp1, clin_cent_grp2, clin_cent_grp3, clin_cent_grp4, 
                     clin_cent_grp5, clin_cent_grp6, clin_cent_grp7))
